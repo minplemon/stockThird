@@ -21,7 +21,7 @@ from stock import cons as ct
 try:
     from urllib.request import urlopen, Request
 except ImportError:
-    from urllib3 import urlopen, Request
+    from urllib2 import urlopen, Request
 
 # 获取某只股票的历史数据
 
