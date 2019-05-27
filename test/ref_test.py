@@ -3,12 +3,13 @@
 # @Time    : 2019-05-27 10:47
 # @Author  : minp
 # @contact : king101125s@gmail.com
-# @Site    : 
+# @Site    :
 # @File    : ref_test.py
 # @Software: PyCharm
 
 import unittest
 from stock import reference as fd
+
 
 class Test(unittest.TestCase):
     def set_data(self):
@@ -24,7 +25,9 @@ class Test(unittest.TestCase):
         self.set_data()
         print(fd.profit_data(top=self.top))
 
-
+    def test_forecast_data(self):
+        self.set_data()
+        print(fd.forecast_data(self.year, self.quarter))
 
 
 if __name__ == '__main__':

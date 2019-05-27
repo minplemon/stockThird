@@ -393,7 +393,8 @@ def _parse_fq_data(url, index, retry_count, pause):
             return df
     raise IOError(ct.NETWORK_URL_ERROR_MSG)
 
-def get_today_ticks(code= None,retry_count=3,pause=0.001):
+
+def get_today_ticks(code=None, retry_count=3, pause=0.001):
     """
         获取当日分笔明细数据
     Parameters
@@ -416,10 +417,10 @@ def get_today_ticks(code= None,retry_count=3,pause=0.001):
     for _ in range(retry_count):
         time.sleep(pause)
         try:
-            request = Request(ct.TODAY_TICKS_PAGE_URL%(ct.P_TYPE['http'],
-                                                       ct.DOMAINS['vsf'],
-                                                       ct.PAGES['jv'],
-                                                       date,symbol))
+            request = Request(ct.TODAY_TICKS_PAGE_URL % (ct.P_TYPE['http'],
+                                                         ct.DOMAINS['vsf'],
+                                                         ct.PAGES['jv'],
+                                                         date, symbol))
             data_str = urlopen(request, timeout=10).read()
             data_str = data_str.decode('GBK')
             data_str = data_str[1:-1]
@@ -430,37 +431,44 @@ def get_today_ticks(code= None,retry_count=3,pause=0.001):
             pages = len(data_str['detailPages'])
             data = pd.DataFrame()
             ct._write_head()
-            for pNo in range(1, pages+1):
-                data = data.append(_today_ticks(symbol, date, pNo,
-                                                retry_count, pause), ignore_index=True)
+            for pNo in range(1, pages + 1):
+                data = data.append(
+                    _today_ticks(
+                        symbol,
+                        date,
+                        pNo,
+                        retry_count,
+                        pause),
+                    ignore_index=True)
         except Exception as er:
             print(str(er))
         else:
             return data
     raise IOError(ct.NETWORK_URL_ERROR_MSG)
 
-
-
-
-
     return None
 
-def _today_ticks(symbol,tdate,pageNo,retry_count,pause):
+
+def _today_ticks(symbol, tdate, pageNo, retry_count, pause):
     ct._write_console()
     for _ in range(retry_count):
         time.sleep(pause)
         try:
-            html = lxml.html.parse(ct.TODAY_TICKS_URL% (ct.P_TYPE['http'],
-                                                        ct.DOMAINS['vsf'],
-                                                        ct.PAGES['t_ticks'],
-                                                        symbol,tdate,pageNo))
+            html = lxml.html.parse(
+                ct.TODAY_TICKS_URL %
+                (ct.P_TYPE['http'],
+                 ct.DOMAINS['vsf'],
+                    ct.PAGES['t_ticks'],
+                    symbol,
+                    tdate,
+                    pageNo))
             res = html.xpath('//table[@id=\"datatbl\"]/tbody/tr')
             if ct.PY3:
                 sarr = [etree.tostring(node).decode('utf-8') for node in res]
             else:
                 sarr = [etree.tostring(node) for node in res]
             sarr = ''.join(sarr)
-            sarr = '<table>%s</table>'%sarr
+            sarr = '<table>%s</table>' % sarr
             sarr = sarr.replace('--', '0')
             df = pd.read_html(StringIO(sarr), parse_dates=False)[0]
             df.columns = ct.TODAY_TICK_COLUMNS
@@ -471,14 +479,7 @@ def _today_ticks(symbol,tdate,pageNo,retry_count,pause):
             return df
     raise IOError(ct.NETWORK_URL_ERROR_MSG)
 
-
-
-
-
-
     return None
-
-
 
 
 def _get_index_url(index, code, qt):

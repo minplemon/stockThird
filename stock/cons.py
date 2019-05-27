@@ -29,9 +29,23 @@ DOMAINS = {'sina': 'sina.com.cn', 'sinahq': 'sinajs.cn',
            'tt': 'gtimg.cn', 'gw': 'gw.com.cn',
            'v500': 'value500.com', 'sstar': 'stock.stockstar.com',
            'dfcf': 'nufm.dfcfw.com'}
-FORMAT = lambda x: '%.2f' % x
-FORMAT4 = lambda x: '%.4f' % x
-HIST_FQ_COLS = ['date', 'open', 'high', 'close', 'low', 'volume', 'amount', 'factor']
+
+
+def FORMAT(x): return '%.2f' % x
+
+
+def FORMAT4(x): return '%.4f' % x
+
+
+HIST_FQ_COLS = [
+    'date',
+    'open',
+    'high',
+    'close',
+    'low',
+    'volume',
+    'amount',
+    'factor']
 HIST_FQ_URL = '%s%s/corp/go.php/vMS_FuQuanMarketHistory/stockid/%s.phtml?year=%s&jidu=%s'
 HIST_INDEX_URL = '%s%s/corp/go.php/vMS_MarketHistory/stockid/%s/type/S.phtml?year=%s&jidu=%s'
 HIST_FQ_FACTOR_URL = '%s%s/api/json.php/BasicStockSrv.getStockFuQuanData?symbol=%s&type=hfq'
@@ -159,7 +173,18 @@ LIVE_DATA_URL = '%shq.%s/rn=%s&list=%s'
 TODAY_TICKS_PAGE_URL = '%s%s/quotes_service/api/%s/CN_Transactions.getAllPageTime?date=%s&symbol=%s'
 KLINE_TT_URL = '%sweb.ifzq.%s/appstock/app/%skline/get?_var=kline_day%s&param=%s,%s,%s,%s,640,%s&r=0.%s'
 TODAY_TICKS_URL = '%s%s/quotes_service/view/%s?symbol=%s&date=%s&page=%s'
-TODAY_TICK_COLUMNS = ['time', 'price', 'pchange', 'change', 'volume', 'amount', 'type']
+TODAY_TICK_COLUMNS = [
+    'time',
+    'price',
+    'pchange',
+    'change',
+    'volume',
+    'amount',
+    'type']
+DATE_CHK_MSG = '年度输入错误：请输入1989年以后的年份数字，格式：YYYY'
+DATE_CHK_Q_MSG = '季度输入错误：请输入1、2、3或4数字'
+FORECAST_URL = '%s%s/q/go.php/vFinanceAnalyze/kind/performance/%s?s_i=&s_a=&s_c=&s_type=&reportdate=%s&quarter=%s&p=%s&num=%s'
+FORECAST_COLS = ['code', 'name', 'type', 'report_date', 'pre_eps', 'range']
 
 
 PY3 = (sys.version_info[0] >= 3)
@@ -198,3 +223,12 @@ def _code_to_symbol_dgt(code):
         else:
             return '0%s' % code if code[:1] in [
                 '5', '6', '7'] else '1%s' % code
+
+
+def _check_input(year, quarter):
+    if isinstance(year, str) or year < 1989:
+        raise TypeError(DATE_CHK_MSG)
+    elif quarter is None or isinstance(quarter, str) or quarter not in [1, 2, 3, 4]:
+        raise TypeError(DATE_CHK_Q_MSG)
+    else:
+        return True

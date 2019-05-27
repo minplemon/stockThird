@@ -49,6 +49,7 @@ class Test(unittest.TestCase):
         self.set_data()
         print(fd.get_today_ticks(self.code))
 
+
 if __name__ == "__main__":
     #import sys;sys.argv = ['', 'Test.testName']
     unittest.main()
