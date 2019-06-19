@@ -4,7 +4,7 @@
 # @Author  : minp
 # @contact : king101125s@gmail.com
 # @Site    : 
-# @File    : uuStockDataAll.py
+# @File    : UUStockDiagnoseData.py
 # @Software: PyCharm
 
 ## 诊股详情
