@@ -12,22 +12,14 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_get_index_stocks():
-    """
-    获取一个指数给定日期在平台可交易的成分股列表
-    :param  :index_symbol, 指数代码
-            date: 查询日期, 一个字符串(格式类似’2015-10-15’)或者[datetime.date]/[datetime.datetime]对象, 可以是None, 使用默认日期. 这个默认日期在回测和研究模块上有点差别:
-    :沪深指数列表 :https://www.joinquant.com/help/api/help?name=index#%E6%B2%AA%E6%B7%B1%E6%8C%87%E6%95%B0%E5%88%97%E8%A1%A8
-    :rtype : list
-    :return:
-    """
-    return get_index_stocks('000300.XSHG')
+
 
 def uu_get_industry_stocks():
     """
-    获取在给定日期一个行业或概念板块的所有股票，行业分类列表见数据页面-行业概念数据。
+    获取在给定日期一个行业板块的所有股票，行业分类列表见数据页面-行业数据。
     :param :industry_code: 行业编码
             date: 查询日期, 一个字符串(格式类似’2015-10-15’)或者[datetime.date]/[datetime.datetime]对象, 可以是None, 使用默认日期. 这个默认日期在回测和研究模块上有点差别:
+    :行业列 : https://www.joinquant.com/data/dict/plateData#%E8%A1%8C%E4%B8%9A%E7%B1%BB
     :rtype : list
     :return:
     """
@@ -35,10 +27,10 @@ def uu_get_industry_stocks():
 
 def uu_get_concept_stocks():
     """
-    获取在给定日期一个行业或概念板块的所有股票，概念分类列表见数据页面-行业概念数据。
+    获取在给定日期一个概念板块的所有股票，概念分类列表见数据页面-概念数据。
     :param :industry_code: 行业编码
             date: 查询日期, 一个字符串(格式类似’2015-10-15’)或者[datetime.date]/[datetime.datetime]对象, 可以是None, 使用默认日期. 这个默认日期在回测和研究模块上有点差别:
-    :行业列 : https://www.joinquant.com/data/dict/plateData
+    :概念列 : https://www.joinquant.com/data/dict/plateData#%E6%A6%82%E5%BF%B5%E6%9D%BF%E5%9D%97
     :rtype : list
     :return:
     """
