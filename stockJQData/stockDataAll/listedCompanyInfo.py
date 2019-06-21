@@ -20,7 +20,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_query_STK_EMPLOYEE_INFO():
+def stock_query_STK_EMPLOYEE_INFO():
     """
     上市公司员工情况
     获取上市公司在公告中公布的员工情况，包括员工人数、学历等信息
@@ -51,7 +51,7 @@ def uu_query_STK_EMPLOYEE_INFO():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_COMPANY_INFO():
+def stock_query_STK_COMPANY_INFO():
     """
     上市公司基本信息
     获取上市公司最新公布的基本信息，包含注册资本，主营业务，行业分类等
@@ -115,7 +115,7 @@ def uu_query_STK_COMPANY_INFO():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_STATUS_CHANGE():
+def stock_query_STK_STATUS_CHANGE():
     """
     上市公司状态变动
     获取上市公司已发行未上市、正常上市、实行ST、*ST、暂停上市、终止上市的变动情况等
@@ -189,7 +189,7 @@ def uu_query_STK_STATUS_CHANGE():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_LIST():
+def stock_query_STK_LIST():
     """
     股票上市信息
     获取沪深A股的上市信息，包含上市日期、交易所、发行价格、初始上市数量等
@@ -223,7 +223,7 @@ def uu_query_STK_LIST():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_NAME_HISTORY():
+def stock_query_STK_NAME_HISTORY():
     """
     股票简称变更
     获取在A股市场和B股市场上市的股票简称的变更情况
@@ -252,7 +252,7 @@ def uu_query_STK_NAME_HISTORY():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_MANAGEMENT_INFO():
+def stock_query_STK_MANAGEMENT_INFO():
     """
     公司管理人员任职情况
     记录上市公司管理人员的任职情况
