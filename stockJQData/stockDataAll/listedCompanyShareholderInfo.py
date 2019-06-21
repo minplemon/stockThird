@@ -22,7 +22,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_query_STK_SHAREHOLDER_TOP10():
+def stock_query_STK_SHAREHOLDER_TOP10():
     """
     十大股东
     获取上市公司前十大股东的持股情况，包括持股数量，所持股份性质，变动原因等
@@ -63,7 +63,7 @@ def uu_query_STK_SHAREHOLDER_TOP10():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_SHAREHOLDER_FLOATING_TOP10():
+def stock_query_STK_SHAREHOLDER_FLOATING_TOP10():
     """
     十大流通股东
     获取上市公司前十大流通股东的持股情况，包括持股数量，所持股份性质，变动原因等
@@ -102,7 +102,7 @@ def uu_query_STK_SHAREHOLDER_FLOATING_TOP10():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_SHARES_PLEDGE():
+def stock_query_STK_SHARES_PLEDGE():
     """
     股东股份质押
     获取上市公司股东股份的质押情况
@@ -142,7 +142,7 @@ def uu_query_STK_SHARES_PLEDGE():
     return df
 
 
-def uu_query_STK_SHARES_FROZEN():
+def stock_query_STK_SHARES_FROZEN():
     """
     股东股份冻结
     获取上市公司股东股份的冻结情况
@@ -182,7 +182,7 @@ def uu_query_STK_SHARES_FROZEN():
     return df
 
 
-def uu_query_STK_HOLDER_NUM():
+def stock_query_STK_HOLDER_NUM():
     """
     股东户数
     获取上市公司全部股东户数，A股股东、B股股东、H股股东的持股户数
@@ -211,7 +211,7 @@ def uu_query_STK_HOLDER_NUM():
     return df
 
 
-def uu_query_STK_SHAREHOLDERS_SHARE_CHANGE():
+def stock_query_STK_SHAREHOLDERS_SHARE_CHANGE():
     """
     大股东增减持
     获取上市公司大股东的增减持情况
@@ -246,7 +246,7 @@ def uu_query_STK_SHAREHOLDERS_SHARE_CHANGE():
     return df
 
 
-def uu_query_STK_LIMITED_SHARES_UNLIMIT():
+def stock_query_STK_LIMITED_SHARES_UNLIMIT():
     """
     受限股份实际解禁日期
     获取公司已上市的受限股份实际解禁的日期
@@ -279,7 +279,7 @@ def uu_query_STK_LIMITED_SHARES_UNLIMIT():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_CAPITAL_CHANGE():
+def stock_query_STK_CAPITAL_CHANGE():
     """
     上市公司股本变动
     获取上市公司的股本变动情况
