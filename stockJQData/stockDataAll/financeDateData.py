@@ -20,7 +20,7 @@ from jqdatasdk import *
 import logging as log
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_get_fundamentals():
+def stock_get_fundamentals():
     """
     查询财务数据
     :财务数据文档 :https://www.joinquant.com/help/api/help?name=Stock#%E8%B4%A2%E5%8A%A1%E6%95%B0%E6%8D%AE%E5%88%97%E8%A1%A8
@@ -117,7 +117,7 @@ def uu_get_fundamentals():
     return df
 
 
-def uu_get_fundamentals_continuously():
+def stock_get_fundamentals_continuously():
     """
     查询财务数据
     :财务数据列表 : https://www.joinquant.com/help/api/help?name=Stock#%E8%B4%A2%E5%8A%A1%E6%95%B0%E6%8D%AE%E5%88%97%E8%A1%A8
