@@ -28,7 +28,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_query_STK_FIN_FORCAST():
+def stock_query_STK_FIN_FORCAST():
     """
     获取上市公司业绩预告等信息
     :param :query(finance.STK_FIN_FORCAST)：表示从finance.STK_FIN_FORCAST这张表中查询上市公司业绩报告的字段信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -86,7 +86,7 @@ def uu_query_STK_FIN_FORCAST():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_INCOME_STATEMENT():
+def stock_query_STK_INCOME_STATEMENT():
     """
     获取上市公司定期公告中公布的合并利润表数据
     :param :query(finance.STK_INCOME_STATEMENT)：表示从finance.STK_INCOME_STATEMENT这张表中查询上市公司定期公告中公布的合并利润表信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -181,7 +181,7 @@ def uu_query_STK_INCOME_STATEMENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_INCOME_STATEMENT_PARENT():
+def stock_query_STK_INCOME_STATEMENT_PARENT():
     """
     获取上市公司母公司利润的信息
     :param :query(finance.STK_INCOME_STATEMENT_PARENT)：表示从finance.STK_INCOME_STATEMENT_PARENT这张表中查询上市公司母公司利润表的字段信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -278,7 +278,7 @@ def uu_query_STK_INCOME_STATEMENT_PARENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_CASHFLOW_STATEMENT():
+def stock_query_STK_CASHFLOW_STATEMENT():
     """
     获取上市公司定期公告中公布的合并现金流量表数据
     :param :query(finance.STK_CASHFLOW_STATEMENT)：表示从finance.STK_CASHFLOW_STATEMENT这张表中查询上市公司定期公告中公布的合并现金流量表信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -404,7 +404,7 @@ def uu_query_STK_CASHFLOW_STATEMENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_CASHFLOW_STATEMENT_PARENT():
+def stock_query_STK_CASHFLOW_STATEMENT_PARENT():
     """
     获取上市公司定期公告中公布的母公司现金流量表
     :param :query(finance.STK_CASHFLOW_STATEMENT_PARENT)：表示从finance.STK_CASHFLOW_STATEMENT_PARENT这张表中查询上市公司定期公告中公布的母公司现金流量表信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -532,7 +532,7 @@ def uu_query_STK_CASHFLOW_STATEMENT_PARENT():
     return df
 
 
-def uu_query_STK_BALANCE_SHEET():
+def stock_query_STK_BALANCE_SHEET():
     """
     合并资产负债表
     获取上市公司定期公告中公布的合并资产负债表
@@ -678,7 +678,7 @@ def uu_query_STK_BALANCE_SHEET():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_BALANCE_SHEET_PARENT():
+def stock_query_STK_BALANCE_SHEET_PARENT():
     """
     母公司资产负债表
     获取上市公司定期公告中公布的母公司资产负债表
@@ -824,7 +824,7 @@ def uu_query_STK_BALANCE_SHEET_PARENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_INCOME_STATEMENT():
+def stock_query_FINANCE_INCOME_STATEMENT():
     """
     金融类合并利润表
     获取金融类上市公司的合并利润表信息
@@ -920,7 +920,7 @@ def uu_query_FINANCE_INCOME_STATEMENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_INCOME_STATEMENT_PARENT():
+def stock_query_FINANCE_INCOME_STATEMENT_PARENT():
     """
     金融类母公司利润表
     获取金融类上市公司的母公司利润表信息
@@ -1017,7 +1017,7 @@ def uu_query_FINANCE_INCOME_STATEMENT_PARENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_CASHFLOW_STATEMENT():
+def stock_query_FINANCE_CASHFLOW_STATEMENT():
     """
     金融类合并现金流量表
     获取金融类上市公司的合并现金流量表信息
@@ -1156,7 +1156,7 @@ def uu_query_FINANCE_CASHFLOW_STATEMENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_CASHFLOW_STATEMENT():
+def stock_query_FINANCE_CASHFLOW_STATEMENT():
     """
     金融类合并现金流量表
     获取金融类上市公司的合并现金流量表信息
@@ -1295,7 +1295,7 @@ def uu_query_FINANCE_CASHFLOW_STATEMENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_CASHFLOW_STATEMENT_PARENT():
+def stock_query_FINANCE_CASHFLOW_STATEMENT_PARENT():
     """
     金融类母公司现金流量表
     获取金融类上市公司的母公司现金流量表信息
@@ -1434,7 +1434,7 @@ def uu_query_FINANCE_CASHFLOW_STATEMENT_PARENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_FINANCE_BALANCE_SHEET():
+def stock_query_FINANCE_BALANCE_SHEET():
     """
     金融类合并资产负债表
     获取金融类上市公司的合并资产负债表信息
@@ -1584,7 +1584,7 @@ def uu_query_FINANCE_BALANCE_SHEET():
     return df
 
 
-def uu_query_FINANCE_BALANCE_SHEET_PARENT():
+def stock_query_FINANCE_BALANCE_SHEET_PARENT():
     """
     金融类母公司资产负债表
     获取金融类上市公司的母公司资产负债表信息
@@ -1733,7 +1733,7 @@ def uu_query_FINANCE_BALANCE_SHEET_PARENT():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_FINANCE_SUPPLEMENT():
+def stock_query_STK_FINANCE_SUPPLEMENT():
     """
     财务报表补充科目
     描述：记录上市公司在财务报表中的补充科目（2018年6月，财政部修订了企业财务报表格式，其中资产负债表主要是合并了应收账款和应收票据、应付账款和应付票据，利润表主要是将研发费用从管理费用中拿出来单列，同时对股东权益变动表做了部分调整，补充数据自2018年9月30号三季报开始公布）
