@@ -27,7 +27,7 @@ from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
 
-def uu_get_all_securities():
+def stock_get_all_securities():
     """
     获取平台支持的所有股票数据:获取平台支持的所有股票、基金、指数、期货信息
     :param :types: list: 用来过滤securities的类型, list元素可选: 'stock', 'fund', 'index', 'futures', 'etf', 'lof', 'fja', 'fjb'。types为空时返回所有股票, 不包括基金,指数和期货
@@ -69,7 +69,7 @@ def uu_get_all_securities():
 
 
 
-def uu_get_security_info():
+def stock_get_security_info():
     """
     获取单支股票的信息 :获取股票/基金/指数的信息
     :param : code: 证券代码
@@ -84,7 +84,7 @@ def uu_get_security_info():
 
     return get_security_info('502050.XSHG')
 
-def uu_get_index_stocks():
+def stock_get_index_stocks():
     """
     获取一个指数给定日期在平台可交易的成分股列表
     :param  :index_symbol, 指数代码
@@ -96,7 +96,7 @@ def uu_get_index_stocks():
     return get_index_stocks('000300.XSHG')
 
 
-def uu_get_margincash_stocks():
+def stock_get_margincash_stocks():
     """
     获取融资标的列表
     :param :date:默认为None,不指定时返回上交所、深交所最近一次披露的的可融资标的列表的list
@@ -106,7 +106,7 @@ def uu_get_margincash_stocks():
     return get_margincash_stocks()
 
 
-def uu_get_marginsec_stocks():
+def stock_get_marginsec_stocks():
     """
     获取融券标的列表
     :param :date:默认为None,不指定时返回上交所、深交所最近一次披露的的可融券标的列表的list
@@ -116,7 +116,7 @@ def uu_get_marginsec_stocks():
     return get_marginsec_stocks()
 
 
-def uu_get_locked_shares():
+def stock_get_locked_shares():
     """
     获取指定日期区间内的限售解禁数据
     :param :stock_list: 一个股票代码的 list
@@ -132,7 +132,7 @@ def uu_get_locked_shares():
     """
     return get_locked_shares(stock_list=['000001.XSHE', '000002.XSHE'], start_date='2018-08-01', forward_count=500)
 
-def uu_get_index_weights():
+def stock_get_index_weights():
     """
     获取指数成份股权重（月度）
     获取指数成份股给定日期的权重数据，每月更新一次，请点击指数列表查看指数信息
@@ -148,7 +148,7 @@ def uu_get_index_weights():
 
 
 
-def uu_get_extras():
+def stock_get_extras():
     """
     获取基金净值/期货结算价等
     :param :info: ['is_st', 'acc_net_value', 'unit_net_value', 'futures_sett_price', 'futures_positions'] 中的一个
@@ -172,7 +172,7 @@ def uu_get_extras():
     return get_extras('is_st', ['000001.XSHE', '000018.XSHE'], start_date='2013-12-01', end_date='2013-12-03')
 
 
-def uu_get_mtss():
+def stock_get_mtss():
     """
     获取一只或者多只股票在一个时间段内的融资融券信息
     :param :security_list: 一只股票代码或者一个股票代码的 list
