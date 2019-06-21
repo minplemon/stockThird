@@ -20,7 +20,7 @@ from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证 可通过注册 聚宽领取 https://www.joinquant.com
 
 
-def uu_get_industries():
+def stock_get_industries():
     """
     按照行业分类获取行业列表
     :param :name: 行业代码， 取值如下：
@@ -37,7 +37,7 @@ def uu_get_industries():
     """
     return get_industries(name='zjw')
 
-def uu_get_industry_stocks():
+def stock_get_industry_stocks():
     """
     获取在给定日期一个行业的所有股票
     :行业列表 : https://www.joinquant.com/help/api/help?name=plateData
@@ -48,7 +48,7 @@ def uu_get_industry_stocks():
     """
     # 获取计算机/互联网行业的成分股
     return get_industry_stocks('I64')
-def uu_get_concepts():
+def stock_get_concepts():
     """
     获取概念板块列表
     :param :
@@ -58,7 +58,7 @@ def uu_get_concepts():
             start_date: 开始日期
     """
     return get_concepts()
-def uu_get_concept_stocks():
+def stock_get_concept_stocks():
     """
     获取在给定日期一个概念板块的所有股票
     行业概念数据 :https://www.joinquant.com/data/dict/plateData
@@ -69,7 +69,7 @@ def uu_get_concept_stocks():
     """
     # 获取风力发电概念板块的成分股
     return get_concept_stocks('GN036')
-def uu_get_industry():
+def stock_get_industry():
     """
     查询股票所属行业
     :param :security：标的代码，类型为字符串，形式如"000001.XSHE"；或为包含标的代码字符串的列表，形如["000001.XSHE", "000002.XSHE"]
