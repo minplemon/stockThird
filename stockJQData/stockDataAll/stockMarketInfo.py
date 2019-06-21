@@ -29,7 +29,7 @@ auth('18620668927', 'minpeng123')   # 账号密码认证
 
 
 
-def uu_get_ticks():
+def stock_get_ticks():
     """
     获取股票 tick 数据 (历史数据)
     :param :security: 股票代码或期货代码
@@ -53,7 +53,7 @@ def uu_get_ticks():
     return get_ticks("000001.XSHE",start_dt="2019-06-19", end_dt="2019-06-21")
 
 
-def uu_get_current_tick():
+def stock_get_current_tick():
     """
     :param :security: 标的代码， 支持股票、商品期货和股指期货以及包含标的代码的列表。 期货需要使用具体合约代码，不可以使用主力合约和指数合约代码
     :rtype :
@@ -61,7 +61,7 @@ def uu_get_current_tick():
     """
     return get_current_tick('000001.XSHE')
 
-def uu_get_trade_days():
+def stock_get_trade_days():
     """
     获取指定范围交易日
     获取指定日期范围内的所有交易日, 返回 [numpy.ndarray], 包含指定的 start_date 和 end_date, 默认返回至 datatime.date.today() 的所有交易日
@@ -73,7 +73,7 @@ def uu_get_trade_days():
     """
     return get_trade_days(start_date="2019-01-01", end_date="2020-01-01")
 
-def uu_get_all_trade_days():
+def stock_get_all_trade_days():
     """
     获取所有交易日, 不需要传入参数, 返回一个包含所有交易日的 [numpy.ndarray], 每个元素为一个 [datetime.date] 类型.
     :param :
@@ -82,7 +82,7 @@ def uu_get_all_trade_days():
     """
     return get_all_trade_days()
 
-def uu_get_price():
+def stock_get_price():
     """
     获取一支或者多只股票的实时行情和历史行情, 按天或者按分钟，这里在使用时注意 end_date 的设置，不要引入未来的数据
     :param :security: 一支股票代码或者一个股票代码的list
@@ -117,7 +117,7 @@ def uu_get_price():
                fields=['open', 'close','low','high','volume','money','factor','high_limit','low_limit','avg','pre_close','paused'])
 
 
-def uu_get_bars():
+def stock_get_bars():
     """
     获取各种时间周期的bar数据，bar的分割方式与主流股票软件相同， 同时还支持返回当前时刻所在 bar 的数据
     :param :security: 股票代码，支持单个及多个标的
@@ -132,7 +132,7 @@ def uu_get_bars():
     """
     return get_bars('600519.XSHG', 10, unit='1d',fields=['date','open','high','low','close'],include_now=False,end_dt='2018-12-05')
 
-def uu_get_mtss():
+def stock_get_mtss():
     """
     获取一只或者多只股票在一个时间段内的融资融券信息
     :param :security_list: 一只股票代码或者一个股票代码的 list
@@ -160,7 +160,7 @@ def uu_get_mtss():
     """
     return get_mtss('000001.XSHE', '2016-01-01', '2016-04-01')
 
-def uu_get_money_flow():
+def stock_get_money_flow():
     """
     获取一只或者多只股票在一个时间段内的资金流向数据
     :param :security_list: 一只股票代码或者一个股票代码的 list
@@ -188,7 +188,7 @@ def uu_get_money_flow():
     return get_money_flow('000001.XSHE', '2016-02-01', '2016-02-04')
 
 
-def uu_get_billboard_list():
+def stock_get_billboard_list():
     """
     获取指定日期区间内的龙虎榜数据
     :param :stock_list: 一个股票代码的 list。 当值为 None 时， 返回指定日期的所有股票。
@@ -228,7 +228,7 @@ def uu_get_billboard_list():
     """
     return get_billboard_list(stock_list=None, end_date = '2018-08-01', count =1)
 
-def uu_get_future_contracts():
+def stock_get_future_contracts():
     """
     获取某期货品种在指定日期下的可交易合约标的列表
     :param :security: 期货合约品种，如 'AG'(白银)
@@ -238,7 +238,7 @@ def uu_get_future_contracts():
     """
     return get_future_contracts('AU','2017-01-05')
 
-def uu_get_dominant_future():
+def stock_get_dominant_future():
     """
     获取主力合约对应的标的
     :param :underlying_symbol: 期货合约品种，如 'AG'(白银)
