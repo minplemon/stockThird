@@ -18,7 +18,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_query_STK_XR_XD():
+def stock_query_STK_XR_XD():
     """
     记录由上市公司年报、中报、一季报、三季报统计出的分红转增情况
     :param :query(finance.STK_XR_XD)：表示从finance.STK_XR_XD这张表中查询上市公司除权除息的数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -85,7 +85,7 @@ def uu_query_STK_XR_XD():
     return df
 
 
-def uu_query_STK_EXCHANGE_TRADE_INFO():
+def stock_query_STK_EXCHANGE_TRADE_INFO():
     """
     记录沪深两市股票交易的成交情况，包括市值、成交量，市盈率等情况
     :param :query(finance.STK_EXCHANGE_TRADE_INFO)：表示从finance.STK_EXCHANGE_TRADE_INFO这张表中查询沪深两市股票交易的成交情况，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：query简易教程
@@ -122,7 +122,7 @@ def uu_query_STK_EXCHANGE_TRADE_INFO():
     return df
 
 
-def uu_query_STK_MT_TOTAL():
+def stock_query_STK_MT_TOTAL():
     """
     描述：记录上海交易所和深圳交易所的融资融券汇总数据
     :param :query(finance.STK_MT_TOTAL)：表示从finance.STK_MT_TOTAL这张表中查询融资融券汇总数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：query简易教程
