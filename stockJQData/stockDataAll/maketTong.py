@@ -22,7 +22,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证
 
-def uu_query_STK_AH_PRICE_COMP():
+def stock_query_STK_AH_PRICE_COMP():
     """
     记录同时在A股和H股上市的股票的价格比对
     :param :query(finance.STK_AH_PRICE_COMP)：表示从finance.STK_AH_PRICE_COMP这张表中查询同时在A股和H股上市的股票的价格对比，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -48,7 +48,7 @@ def uu_query_STK_AH_PRICE_COMP():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_EL_CONST_CHANGE():
+def stock_query_STK_EL_CONST_CHANGE():
     """
     记录沪港通、深港通和港股通的成分股的变动情况
     :param :query(finance.STK_EL_CONST_CHANGE)：表示从finance.STK_EL_CONST_CHANGE这张表中查询沪港通、深港通和港股通成分股的变动记录，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -75,7 +75,7 @@ def uu_query_STK_EL_CONST_CHANGE():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_EXCHANGE_LINK_CALENDAR():
+def stock_query_STK_EXCHANGE_LINK_CALENDAR():
     """
     记录沪港通、深港通和港股通每天是否开市
     :param :query(finance.STK_EXCHANGE_LINK_CALENDAR)：表示从finance.STK_EXCHANGE_LINK_CALENDAR这张表中查询市场沪港通、深港通和港股通交易日历的信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -115,7 +115,7 @@ def uu_query_STK_EXCHANGE_LINK_CALENDAR():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_EL_TOP_ACTIVATE():
+def stock_query_STK_EL_TOP_ACTIVATE():
     """
     统计沪港通、深港通和港股通前十大交易活跃股的交易状况
     :param :query(finance.STK_EL_TOP_ACTIVATE)：表示从finance.STK_EL_TOP_ACTIVATE这张表中查询沪港通、深港通和港股通前十大交易活跃股的交易状况，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -149,7 +149,7 @@ def uu_query_STK_EL_TOP_ACTIVATE():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_ML_QUOTA():
+def stock_query_STK_ML_QUOTA():
     """
     记录沪股通、深股通和港股通每个交易日的成交与额度的控制情况
     :param :query(finance.STK_ML_QUOTA)：表示从finance.STK_ML_QUOTA这张表中查询沪港通、深港通和港股通的成交与额度信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -191,7 +191,7 @@ def uu_query_STK_ML_QUOTA():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_EXCHANGE_LINK_RATE():
+def stock_query_STK_EXCHANGE_LINK_RATE():
     """
     包含2014年11月起人民币和港币之间的参考汇率/结算汇兑比率信息
     :param :query(finance.STK_EXCHANGE_LINK_RATE)：表示从finance.STK_EXCHANGE_LINK_RATE这张表中查询汇率信息，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号进行分隔；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
@@ -224,7 +224,7 @@ def uu_query_STK_EXCHANGE_LINK_RATE():
     df = finance.run_query(q)
     return df
 
-def uu_query_STK_HK_HOLD_INFO():
+def stock_query_STK_HK_HOLD_INFO():
     """
     记录了北向资金（沪股通、深股通）和南向资金港股通的持股数量和持股比例
     :param :query(finance.STK_HK_HOLD_INFO)：表示从finance.STK_HK_HOLD_INFO这张表中查询沪深港通的持股数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号分隔进行提取；如query(finance.STK_HK_HOLD_INFO.code)。query函数的更多用法详见：query简易教程。
@@ -246,7 +246,7 @@ def uu_query_STK_HK_HOLD_INFO():
         finance.STK_HK_HOLD_INFO.day.desc()))
     return df
 
-def uu_query_GLOBAL_IDX_DAILY():
+def stock_query_GLOBAL_IDX_DAILY():
     """
     获取港美股指数日行情数据
     :param :query(finance.GLOBAL_IDX_DAILY)：表示从finance.GLOBAL_IDX_DAILY这张表中查询港美股指数日行情的数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用逗号分隔进行提取；query函数的更多用法详见：sqlalchemy.orm.query.Query对象
