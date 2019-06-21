@@ -16,7 +16,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证 可通过注册 聚宽领取 https://www.joinquant.com
 
-def uu_query_SW1_DAILY_PRICE():
+def stock_query_SW1_DAILY_PRICE():
     """
     获取申万一级行业日行情数据
     记录了申万一级行业指数的历史日行情数据，每日18:00更新
@@ -43,7 +43,7 @@ def uu_query_SW1_DAILY_PRICE():
     # 查询最近10个交易日申万一级行业指数-农林牧渔行业（801010）的日行情数据。
     return finance.run_query(query(finance.SW1_DAILY_PRICE).filter(finance.SW1_DAILY_PRICE.code=='801010').order_by(finance.SW1_DAILY_PRICE.date.desc()).limit(10))
 
-def uu_query_SW1_DAILY_VALUATION():
+def stock_query_SW1_DAILY_VALUATION():
     """
     :param :query(finance.SW1_DAILY_VALUATION)：表示从finance.SW1_DAILY_VALUATION这张表中查询申万一级行业指数的估值数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号分隔进行提取；如query(finance.SW1_DAILY_VALUATION.code)。query函数的更多用法详见：query简易教程。
             finance.SW1_DAILY_VALUATION：代表申万一级行业指数估值表，收录了申万一级行业指数的历史估值数据，表结构和字段信息如下：
