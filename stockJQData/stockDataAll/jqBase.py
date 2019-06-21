@@ -16,7 +16,7 @@
 from jqdatasdk import *
 auth('18620668927', 'minpeng123')   # 账号密码认证 可通过注册 聚宽领取 https://www.joinquant.com
 
-def uu_get_query_count():
+def stock_get_query_count():
     """
     :rtype : dict
     :return:字段名	说明
@@ -25,7 +25,7 @@ def uu_get_query_count():
     """
     return get_query_count()
 
-def uu_normalize_code():
+def stock_normalize_code():
     """
     股票代码格式转化
     将其他形式的股票代码转换为jqdatasdk函数可用的股票代码形式。 仅适用于A股市场股票代码以及基金代码,支持传入单只股票或一个股票list 示例
