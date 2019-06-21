@@ -14,7 +14,7 @@ auth('18620668927', 'minpeng123')   # 账号密码认证
 
 
 
-def uu_get_industry_stocks():
+def stock_get_industry_stocks():
     """
     获取在给定日期一个行业板块的所有股票，行业分类列表见数据页面-行业数据。
     :param :industry_code: 行业编码
@@ -25,7 +25,7 @@ def uu_get_industry_stocks():
     """
     return get_industry_stocks('I64')
 
-def uu_get_concept_stocks():
+def stock_get_concept_stocks():
     """
     获取在给定日期一个概念板块的所有股票，概念分类列表见数据页面-概念数据。
     :param :industry_code: 行业编码
@@ -36,7 +36,7 @@ def uu_get_concept_stocks():
     """
     return get_concept_stocks('GN036')
 
-def uu_get_industry():
+def stock_get_industry():
     """
     查询股票所属行业
     :param :security：标的代码，类型为字符串，形式如"000001.XSHE"；或为包含标的代码字符串的列表，形如["000001.XSHE", "000002.XSHE"]
