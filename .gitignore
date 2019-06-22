@@ -134,3 +134,8 @@ venv.bak/
 # .idea/modules
 # *.iml
 # *.ipr
+
+# 文件忽略
+UUStock/
+UUStockData/
+UUdoctor/
