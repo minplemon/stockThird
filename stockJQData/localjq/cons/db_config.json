@@ -1,0 +1,21 @@
+{
+"default": {
+    "host": "127.0.0.1:57017",
+    "dbname": "jq",
+    "username": "user1",
+    "password": "12345",
+    "dbauth": "admin"
+  },
+"server1": {
+    "host": "127.0.0.1:57016",
+    "dbname": "ttt"
+  },
+"server2": {
+    "host": "127.0.0.1",
+    "replicaset": "test_rs"
+  },
+"shard_a": {
+    "host": "127.0.0.1:40000",
+    "dbname": "ttt"
+  }
+}
