@@ -1,0 +1,485 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/11619
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+import numpy as np
+import pandas as pd
+import scipy as sp
+from datetime import *
+import jqdata
+from jqdata import gta
+import statsmodels.api as sm
+from jqlib.technical_analysis import *
+from cvxopt import solvers, matrix
+import time
+
+
+def initialize(context):
+    set_benchmark('000001.XSHG')
+    set_slippage(FixedSlippage(0.02))
+    set_option('use_real_price', True)
+    g.days=0
+    g.seven=seven()
+    g.get_sign=get_sign()
+    g.filter_process=filter_process_()
+    g.seven.set_commission_style(type=2) #VM
+    
+
+def handle_data(context, data):
+    bollsign=g.get_sign.calboll(context)
+    runsign=g.get_sign.calrun(context)
+    
+    #list0=g.filter_process.fp_initial_list(index='000050.XSHG')
+    list0=get_index_stocks('000001.XSHG')
+    #print(len(list0))
+    list1=g.filter_process.fp_indu_filter(list0)
+    #print(len(list1))
+    list2=g.filter_process.fp_peg_filter(dynamic=True,yb_length=4,qr_length=3,list1=list1,context=context)
+    #print(len(list2))
+    #list3=g.filter_process.fp_rs_filter(list2,benchmark='000001.XSHG',context=context)
+    #print(len(list3))
+    
+    list3=g.filter_process.fp_pb_filter(context,list2)
+    list4=g.seven.set_tradeable_stock(context, list3, paused_style=True, new_style=True, new_count=60, limit_style=True)
+    #print(len(list4))
+    weights=g.seven.AllocationSystem(context, list4=list4, alloc_type=0)
+    #print(weights)
+    
+    g.seven.TradingSystem(context, bearsign=bollsign, tradesign=runsign, list4=list4, weight_data=weights)
+
+class get_sign():
+    
+    #布林通道预警信号
+    def calboll(self,context):
+        index='000001.XSHG' 
+        stdate=context.previous_date
+        ub,mb,lb=Bollinger_Bands(index, check_date=stdate, timeperiod=20, nbdevup=2.33, nbdevdn=1.97) #VM
+        maxprice=attribute_history(index,count=1,fields=['high'])
+        minprice=attribute_history(index,count=1,fields=['low'])
+        sign=[]
+        if maxprice['high'][0]>0.97*ub[index]: #VM
+            sign.append('bullish')
+        elif minprice['low'][0]<1.02*lb[index]: #VM
+            sign.append('bearish')
+        else:
+            sign.append('hold')
+            
+        bearsign=sign
+        return bearsign
+        
+    def calrun(self,context):
+        days=g.days
+        tradesign=[]
+        if days % 1 ==0: #VM
+            tradesign.append('trade')
+        else:
+            tradesign.append('hold')
+        days+=1
+        g.days=days
+        return tradesign
+
+class filter_process_():
+        
+    def fp_initial_list(self,index):
+        list0=get_index_stocks(index)
+        return list0
+    
+    def fp_indu_filter(self,list0):
+        cycle_indu=[#'A01', #	农业 	1993-09-17
+                          #'A02', # 林业 	1996-12-06
+                          #'A03', #	畜牧业 	1997-06-11
+                          #'A04', #	渔业 	1993-05-07
+                          #'A05', #	农、林、牧、渔服务业 	1997-05-30
+                          'B06', # 煤炭开采和洗选业 	1994-01-06
+                          'B07', # 石油和天然气开采业 	1996-06-28
+                          'B08', # 黑色金属矿采选业 	1997-07-08
+                          'B09', # 有色金属矿采选业 	1996-03-20
+                          'B11', # 开采辅助活动 	2002-02-05
+                          #'C13', #	农副食品加工业 	1993-12-15
+                          #C14 	食品制造业 	1994-08-18
+                          #C15 	酒、饮料和精制茶制造业 	1992-10-12
+                          #C17 	纺织业 	1992-06-16
+                          #C18 	纺织服装、服饰业 	1993-12-31
+                          #C19 	皮革、毛皮、羽毛及其制品和制鞋业 	1994-04-04
+                          #C20 	木材加工及木、竹、藤、棕、草制品业 	2005-05-10
+                          #C21 	家具制造业 	1996-04-25
+                          #C22 	造纸及纸制品业 	1993-03-12
+                          #C23 	印刷和记录媒介复制业 	1994-02-24
+                          #C24 	文教、工美、体育和娱乐用品制造业 	2007-01-10
+                          'C25', # 石油加工、炼焦及核燃料加工业 	1993-10-25
+                          'C26', # 化学原料及化学制品制造业 	1990-12-19
+                          #C27 	医药制造业 	1993-06-29
+                          'C28', # 化学纤维制造业 	1993-07-28
+                          'C29', # 橡胶和塑料制品业 	1992-08-28
+                          'C30', # 非金属矿物制品业 	1992-02-28
+                          'C31', # 黑色金属冶炼及压延加工业 	1994-01-06
+                          'C32', # 有色金属冶炼和压延加工业 	1996-02-15
+                          'C33', # 金属制品业 	1993-11-30
+                          'C34', # 通用设备制造业 	1992-03-27
+                          'C35', # 专用设备制造业 	1992-07-01
+                          'C36', # 汽车制造业 	1992-07-24
+                          'C37', # 铁路、船舶、航空航天和其它运输设备制造业 	1992-03-31
+                          'C38', # 电气机械及器材制造业 	1990-12-19
+                          #C39 	计算机、通信和其他电子设备制造业 	1990-12-19
+                          #C40 	仪器仪表制造业 	1993-09-17
+                          'C41', # 其他制造业 	1992-08-14
+                          #C42 	废弃资源综合利用业 	2012-10-26
+                          'D44', # 电力、热力生产和供应业 	1993-04-16
+                          #D45 	燃气生产和供应业 	2000-12-11
+                          #D46 	水的生产和供应业 	1994-02-24
+                          'E47', # 房屋建筑业 	1993-04-29
+                          'E48', # 土木工程建筑业 	1994-01-28
+                          'E50', # 建筑装饰和其他建筑业 	1997-05-22
+                          #F51 	批发业 	1992-05-06
+                          #F52 	零售业 	1992-09-02
+                          'G53', # 铁路运输业 	1998-05-11
+                          'G54', # 道路运输业 	1991-01-14
+                          'G55', # 水上运输业 	1993-11-19
+                          'G56', # 航空运输业 	1997-11-05
+                          'G58', # 装卸搬运和运输代理业 	1993-05-05
+                          #G59 	仓储业 	1996-06-14
+                          #H61 	住宿业 	1993-11-18
+                          #H62 	餐饮业 	1997-04-30
+                          #I63 	电信、广播电视和卫星传输服务 	1992-12-02
+                          #I64 	互联网和相关服务 	1992-05-07
+                          #I65 	软件和信息技术服务业 	1992-08-20
+                          'J66', # 货币金融服务 	1991-04-03
+                          'J67', # 资本市场服务 	1994-01-10
+                          'J68', # 保险业 	2007-01-09
+                          'J69', # 其他金融业 	2012-10-26
+                          'K70', # 房地产业 	1992-01-13
+                          #L71 	租赁业 	1997-01-30
+                          #L72 	商务服务业 	1996-08-29
+                          #M73 	研究和试验发展 	2012-10-26
+                          'M74', # 专业技术服务业 	2007-02-15
+                          #N77 	生态保护和环境治理业 	2012-10-26
+                          #N78 	公共设施管理业 	1992-08-07
+                          #P82 	教育 	2012-10-26
+                          #Q83 	卫生 	2007-02-05
+                          #R85 	新闻和出版业 	1992-12-08
+                          #R86 	广播、电视、电影和影视录音制作业 	1994-02-24
+                          #R87 	文化艺术业 	2012-10-26
+                          #S90 	综合 	1990-12-10
+            ]
+
+        cycle_indu_stocks=[]
+        a=0
+        for i in cycle_indu:
+            cycle_indu_stocks_=get_industry_stocks(i)
+            a+=len(cycle_indu_stocks_)
+            cycle_indu_stocks=list(set(cycle_indu_stocks_).union(set(cycle_indu_stocks)))
+        list1=list(set(list0).difference(set(cycle_indu_stocks)))
+        return list1 #返回非周期股票池list
+    
+    def fp_pb_filter(self,context,list_):
+        df=get_fundamentals(query(valuation.code,valuation.circulating_market_cap,valuation.pe_ratio,valuation.pb_ratio,valuation.ps_ratio,indicator.roa,indicator.gross_profit_margin).filter(valuation.code.in_(list_)))
+        PB=df.sort(['pb_ratio'],ascending=True)
+        PB=PB.reset_index(drop=True)
+        PB=PB[PB.pb_ratio > 0]
+        PB=PB.reset_index(drop=True)
+        PB=PB[0:int(len(PB)*0.2)]
+        ListOfPB=list(PB['code'])
+        return ListOfPB
+    
+    def fp_peg_filter(self,dynamic,yb_length,qr_length,list1,context
+                     ):
+        present_date=context.current_dt
+        startdate=int(present_date.year)-5
+        #startdate=2013
+        df_eps=get_fundamentals(query(indicator.code,indicator.eps).filter(indicator.code.in_(list1)),statDate=str(startdate-1))
+        df_eps=df_eps.rename(columns={'eps':str('eps_')+str(startdate-1),'code':str('code')+str(startdate-1)})
+        if dynamic==False:
+            df_pe=get_fundamentals(query(valuation.code,valuation.pe_ratio).filter(valuation.code.in_(list1)),statDate=str(startdate-1))
+            df_pe=df_pe.rename(columns={'pe_ratio':str('pe_ratio_')+str(startdate-1),'code':str('code_')+str(startdate-1)})
+            floc1=[]
+            floc2=[]
+            for i in range(startdate,startdate+qr_length+1):
+                year_date=i
+                df_new_pe=get_fundamentals(query(valuation.code,valuation.pe_ratio).filter(valuation.code.in_(list1)),statDate=year_date)
+                df_new_pe=df_new_pe.rename(columns={'pe_ratio':str('pe_ratio_')+str(year_date),'code':str('code_')+str(year_date)})
+
+                df_new_eps=get_fundamentals(query(indicator.code,indicator.eps).filter(indicator.code.in_(list1)),statDate=str(year_date))
+                df_new_eps=df_new_eps.rename(columns={'eps':str('eps_')+str(year_date),'code':str('code_')+str(year_date)})
+
+                floc1.append(str('pe_ratio_')+str(year_date))
+                floc2.append(str('eps_')+str(year_date))
+                df_pe=pd.concat([df_pe,df_new_pe],axis=1)
+                df_eps=pd.concat([df_eps,df_new_eps],axis=1)
+
+            floc1.append(str('code_')+str(year_date))
+            floc2.append(str('code_')+str(year_date))
+
+            #print(df_eps[floc2])
+
+            delta_eps=df_eps[[str('code_')+str(year_date),str('eps_')+str(year_date-1),str('eps_')+str(year_date)]]
+            delta_eps['delta_eps_'+str(year_date)]=(delta_eps[str('eps_')+str(year_date)]-delta_eps[str('eps_')+str(year_date-1)])/delta_eps[str('eps_')+str(year_date-1)]
+            delta_eps=delta_eps[[str('code_')+str(year_date),'delta_eps_'+str(year_date)]]
+
+            static_pe=df_pe[[str('code_')+str(year_date),'pe_ratio_'+str(year_date)]]
+            list_1=static_pe[str('code_')+str(year_date)]
+            list_2=delta_eps[str('code_')+str(year_date)]
+            if len(set(list_1).union(set(list_2))) != len(set(list_1).intersection(list_2)):
+                raise (ValueError,'cannot match list')
+
+            static_peg=delta_eps
+            static_peg['pe_ratio_'+str(year_date)]=static_pe['pe_ratio_'+str(year_date)]
+            peg=static_peg['pe_ratio_'+str(year_date)]/(static_peg['delta_eps_'+str(year_date)]*100)
+            static_peg['peg_'+str(year_date)]=peg
+            static_peg=static_peg[[str('code_')+str(year_date),'peg_'+str(year_date)]]
+            fdf1=static_peg
+            fdf=fdf1.rename(columns={str('code_')+str(year_date):'code','peg_'+str(year_date):'peg'})
+            
+            
+        elif dynamic==True:
+
+            floc2=[]
+            for i in range(startdate,startdate+qr_length+1):
+                year_date=i
+
+                df_new_eps=get_fundamentals(query(indicator.code,indicator.eps).filter(indicator.code.in_(list1)),statDate=str(year_date))
+                df_new_eps=df_new_eps.rename(columns={'eps':str('eps_')+str(year_date),'code':str('code_')+str(year_date)})
+
+                floc2.append(str('eps_')+str(year_date))
+                df_eps=pd.concat([df_eps,df_new_eps],axis=1)
+
+            floc2.append(str('code_')+str(year_date))
+
+
+            delta_eps=df_eps[[str('code_')+str(year_date),str('eps_')+str(year_date-1),str('eps_')+str(year_date)]]
+            delta_eps['delta_eps_'+str(year_date)]=(delta_eps[str('eps_')+str(year_date)]-delta_eps[str('eps_')+str(year_date-1)])/delta_eps[str('eps_')+str(year_date-1)]
+            delta_eps=delta_eps[[str('code_')+str(year_date),'delta_eps_'+str(year_date)]]
+            
+            namelist=list(delta_eps[str('code_')+str(year_date)])
+            dynamic_pe=get_fundamentals(query(valuation.code,valuation.pe_ratio).filter(valuation.code.in_(namelist)))
+
+            list_1=dynamic_pe['code']
+            list_2=delta_eps[str('code_')+str(year_date)]
+            if len(set(list_1).union(set(list_2))) != len(set(list_1).intersection(list_2)):
+                raise (ValueError,'cannot match list')
+
+            dynamic_peg=delta_eps
+            dynamic_peg['pe_ratio_now']=dynamic_pe['pe_ratio']
+            dyna_peg=dynamic_peg['pe_ratio_now']/(dynamic_peg['delta_eps_'+str(year_date)]*100)
+            dynamic_peg['dynamic_peg_'+str(year_date)]=dyna_peg
+            dynamic_peg=dynamic_peg[[str('code_')+str(year_date),'dynamic_peg_'+str(year_date)]]
+            fdf2=dynamic_peg
+            fdf=fdf2.rename(columns={str('code_')+str(year_date):'code','dynamic_peg_'+str(year_date):'peg'})
+            
+        fdf=fdf.sort(['peg'],ascending=True)
+        fdf=fdf[0<fdf.peg]
+        fdf=fdf[5>fdf.peg]
+        fdf=fdf.reset_index(drop=True)
+        list2=list(fdf['code'])
+        return list2 #返回peg
+    
+    def fp_rs_filter(self,list2,benchmark,context#换成context
+                    ):
+        previous_date=context.previous_date
+        #previous_date=datetime.date(2018,2,25)
+        month_date=previous_date+datetime.timedelta(days=-30)
+        year_date=previous_date+datetime.timedelta(days=-365)
+
+        price_p=get_price(list2,end_date=previous_date,count=1,fields='close')['close']
+        market_p=get_price(benchmark,end_date=previous_date,count=1,fields='close')['close']
+
+        price_m=get_price(list2,end_date=month_date,count=1,fields='close')['close']
+        market_m=get_price(benchmark,end_date=month_date,count=1,fields='close')['close']
+
+        price_y=get_price(list2,end_date=year_date,count=1,fields='close')['close']
+        market_y=get_price(benchmark,end_date=year_date,count=1,fields='close')['close']
+
+        month_S_m=(market_p.mean()-market_m.mean())/market_m.mean()
+        year_S_m=(market_p.mean()-market_y.mean())/market_y.mean()
+
+        month_S_s=(price_p.mean()-price_m.mean())/price_m.mean()
+        year_S_s=(price_p.mean()-price_y.mean())/price_y.mean()
+
+        RS_month=(month_S_s-month_S_m)/(1+month_S_m)
+        RS_year=(year_S_s-year_S_m)/(1+year_S_m)
+
+        tobuylist={'code':[],'RS_month':[],'RS_year':[]}
+        for i in range(len(list2)):
+            if RS_month[list2[i]]>0 and RS_year[list2[i]]>0 and RS_year[list2[i]]>RS_month[list2[i]]:
+                tobuylist['code'].append(list2[i])
+                tobuylist['RS_month'].append(RS_month[list2[i]])
+                tobuylist['RS_year'].append(RS_year[list2[i]])
+
+        tobuylist=pd.DataFrame(tobuylist)
+        tobuylist=tobuylist.sort(['RS_year'],ascending=False)
+        tobuylist=tobuylist.reset_index(drop=True)
+
+        list3=list(tobuylist['code'])
+        return list3
+
+def get_markowitz(context,list_):
+    dayavereturn=[]
+    returndict={}
+    riskaverse=0.3  #VM
+    for security in list_:
+        a=attribute_history(security, count=30, fields=['close'])
+        returnlist=[]
+        for i in range(len(a)-1):
+            returnrate=(a['close'][i+1]-a['close'][i])/a['close'][i]
+            returnlist.append(returnrate)
+        dayavereturn.append(average(returnlist))
+        returndict[security]=returnlist
+    returndict=pd.DataFrame(returndict)
+    cov=returndict.corr()
+        
+    P=matrix(riskaverse*cov.as_matrix())
+
+    q=-1*matrix(dayavereturn)
+    A=[]
+    
+    h=[]
+    for i in range(len(list_)):
+        A.append([1.0])
+        h.append([0.0])
+    A=matrix(A)
+    
+    h=matrix(h).T
+    
+    G=matrix(-1.0*np.eye(len(list_)))
+    
+    b=matrix([[1.0]])
+        
+    sol=solvers.qp(P=P,q=q,A=A,b=b)
+        
+    __weight=list(sol['x'].T)
+        
+    _weight={}
+    for i in range(len(list_)):
+        weight=__weight[i]
+        st=list_[i]
+        _weight[st]=float(weight)
+        
+    return _weight
+    
+    
+def get_risk_parity(context,list_):
+    raise TypeError
+
+
+#------
+class seven():
+    
+    #为context全局变量新增内置对象
+    def set_var(self,context,var_name,var_value):
+        if var_name not in dir(context):
+            setattr(context,var_name,var_value)
+    
+    def set_commission_style(self,type):
+        if type==1:
+            set_order_cost(OrderCost(open_tax=0, close_tax=0.001, open_commission=0.0003, close_commission=0.0003, close_today_commission=0, min_commission=5), type='stock')
+        if type==2:
+            set_order_cost(OrderCost(open_tax=0, close_tax=0, open_commission=0, close_commission=0, close_today_commission=0, min_commission=0), type='stock')
+        else:
+            set_order_cost(OrderCost(open_tax=0, close_tax=0.001, open_commission=0.0003, close_commission=0.0003, close_today_commission=0, min_commission=5), type='stock')
+    
+    def set_tradeable_stock(self, context, list3, paused_style=True, new_style=True, new_count=60, limit_style=True):
+        def del_new_stock(context, list3, new_style, new_count):
+            if new_style==False:
+                return list3
+            else:
+                period=context.current_dt.date()-datetime.timedelta(new_count)
+                newlist=[]
+                for stock in list3:
+                    if get_security_info(stock).start_date < period:
+                        newlist.append(stock)
+                return newlist
+                
+    
+        def del_paused_stock(context, list3, paused_style):
+            if paused_style==False:
+                return list3
+            else:
+                current_data = get_current_data()
+                newlist=[]
+                for stock in list3:
+                    if not current_data[stock].paused:
+                        newlist.append(stock)
+                return newlist
+            
+        def del_limit_stock(context, list3, limit_style):   
+            h1=history(1, '1m', 'close', list3, df=False, skip_paused=False, fq='pre')
+            h2=history(1, '1m', 'high_limit', list3, df=False, skip_paused=False, fq='pre')
+            newlist=[]
+            for stock in list3:
+                if h1[stock][0] < h2[stock][0]:
+                    newlist.append(stock)
+            return newlist
+            
+        listofnew=del_new_stock(context, list3, new_style, new_count)
+        listofpaused=del_paused_stock(context, list3, paused_style)
+        listoflimit=del_limit_stock(context, list3, limit_style)
+        list4=list(set(listofnew) & set(listofpaused))
+        return list4
+        
+    def AllocationSystem(self, context, list4, alloc_type):
+        def equal_weight_system(context, list4):
+            __weight={}
+            length=len(list4)
+            for stock in list4:
+                __weight[stock]=1.0/length
+            return __weight
+        
+        def markowitz_weight_system(context, list4):
+            __weight=get_markowitz(context=context, list_=list4)
+            return __weight
+                
+        def risk_parity_system(context, list4):
+            __weight=get_risk_parity(context=context,list_=list4)
+            return __weight
+        
+        if alloc_type == 1:
+            try:
+                weight_data=risk_parity_system(context, list4)
+            except (TypeError):
+                print('The data is missing, then using the equal weight system... \nOr no stock fitted the criteria...')
+                weight_data=equal_weight_system(context, list4)
+                
+        if alloc_type == 2:
+            try:
+                weight_data=markowitz_weight_system(context, list4)
+            except (TypeError, ValueError):
+                #print(list4)
+                print('The data is missing, then using the equal weight system... \nOr, no stock fitted the criteria...')
+                weight_data=equal_weight_system(context, list4)###
+                #print(list4)
+                
+        if alloc_type == 3:
+            weight_data=target_risk_system(context, list4)
+            
+        if alloc_type == 0:
+            weight_data=equal_weight_system(context, list4)
+            
+        return weight_data
+    
+    def TradingSystem(self, context, bearsign, tradesign, list4, weight_data):
+        holdings=context.portfolio.positions.keys()
+        if tradesign[0] == 'trade':
+            if bearsign[0] == 'bearish':
+                for eachhold in holdings:
+                    order_target_value(eachhold,0)
+            else:
+                for eachhold in holdings:
+                    if eachhold not in list4:
+                        order_target_value(eachhold,0)
+                cash=context.portfolio.cash
+                total_v=float(context.portfolio.total_value)
+                for eachsec in list4:
+                    weight=weight_data[eachsec]
+                    buyamount=float(cash*weight)
+                    if eachsec in holdings:
+                        order_value(eachsec,min(buyamount,context.portfolio.positions[eachsec]))
+                    else:
+                        order_value(eachsec,max(buyamount,0.0))
+        else:
+            if bearsign[0] == 'bearish':
+                for eachhold in holdings:
+                    order_target_value(eachhold,0)
+                

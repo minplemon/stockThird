@@ -1,0 +1,147 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/13400
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+# 导入TA-Lib
+import talib as tb
+def initialize(context):
+    set_commission(PerTrade(buy_cost=0.0003, sell_cost=0.0013, min_cost=5))
+    set_option('use_real_price', True)
+    g.buy_stock_count = 3
+    g.kama_days = 13
+    g.new_public_days = 150
+    g.return_radio = 0.999
+    
+    g.days_counter = 0
+    g.buy_period =2
+    
+    # 运行函数
+    run_daily(market_end, time='after_close')
+    
+def handle_data(context, data):
+    hour = context.current_dt.hour
+    minute = context.current_dt.minute
+    
+    if hour == 9 and minute == 59:
+        if(g.days_counter%g.buy_period == 0):
+            buy_stocks = select_stocks(context,data)
+            adjust_position(context,data, buy_stocks)
+           
+    
+    #每N分钟检查是否要卖
+    if minute%5 == 0 :
+        for stock in context.portfolio.positions.keys():
+            if(context.portfolio.positions[stock].closeable_amount > 0):
+                single = get_kama_single(context,stock)
+                if(single == -1):
+                    order_target_value(stock, 0)
+
+def market_end(context):
+    g.days_counter = g.days_counter +1;
+
+
+#过滤停牌 st        
+def filter_paused_and_st_stock(stock_list):
+    current_data = get_current_data()
+    return [stock for stock in stock_list if not current_data[stock].paused 
+    and not current_data[stock].is_st and 'ST' not in current_data[stock].
+    name and '*' not in current_data[stock].name and '退' not in current_data[stock].name]
+
+def filter_gem_stock(context, stock_list):
+    return [stock for stock in stock_list  if stock[0:3] != '300']
+
+#筛选股票, 次新最小市值排序获取前N个    
+def select_stocks(context,data):
+    q = query(valuation.code, 
+            valuation.circulating_market_cap
+        ).order_by(
+            valuation.circulating_market_cap.asc()
+        ).filter(
+            valuation.circulating_market_cap <= 99
+        ).limit(100)
+        
+    df = get_fundamentals(q)
+    stock_list = list(df['code'])
+    stock_list = filter_paused_and_st_stock(stock_list)
+    stock_list = filter_gem_stock(context, stock_list)
+    blacklist = [] 
+    #新股筛选
+    tmpList = []
+    for stock in stock_list :
+        #按交易日期算更合理？
+        days_public=(context.current_dt.date() - get_security_info(stock).start_date).days
+        if days_public < g.new_public_days and days_public > 50:
+                tmpList.append(stock)
+    stock_list = tmpList
+    #均线筛选
+    tmp_TimeSelect_List = []
+    for stock in stock_list :
+        sigle = get_kama_single(context, stock)
+        if(sigle >= 0):
+            tmp_TimeSelect_List.append(stock)
+    stock_list = tmp_TimeSelect_List
+    
+    
+    filter_stocks = []
+    last_prices = history(1, '1m', 'close', security_list=stock_list)
+    curr_data = get_current_data()
+    for stock in stock_list:
+        if last_prices[stock][-1] < curr_data[stock].high_limit:
+            if last_prices[stock][-1] > curr_data[stock].low_limit:
+                if stock not in blacklist:
+                    filter_stocks.append(stock)
+    stock_list = filter_stocks 
+    stock_list = stock_list[:g.buy_stock_count]  
+    return stock_list;
+    
+def adjust_position(context,data, buy_stocks):
+    #卖
+    for stock in context.portfolio.positions.keys():
+        last_prices = history(1, '1m', 'close', security_list=context.portfolio.positions.keys())
+        if stock not in buy_stocks:
+            curr_data = get_current_data()
+            if last_prices[stock][-1] < curr_data[stock].high_limit:
+                position = context.portfolio.positions[stock]
+                order_target_value(stock, 0)
+    #买            
+    for stock in buy_stocks:
+        position_count = len(context.portfolio.positions)
+        if g.buy_stock_count > position_count:
+            value = context.portfolio.cash / (g.buy_stock_count - position_count)
+            if context.portfolio.positions[stock].total_amount == 0:
+                order_target_value(stock, value)
+
+
+
+def get_kama_single(context,security):
+    period= g.kama_days*4*6
+    close_long = get_price(security, end_date=context.current_dt, frequency='10m', fields=['close'], count= period +2*4*6 )['close'].values;
+    #close_short = get_price(g.security, end_date=context.previous_date, frequency='1d', fields=['close'], count= short_days+10 )['close'].values;
+    kama_long =  tb.KAMA(close_long,timeperiod= period); 
+    #kama_short =  tb.KAMA(close_short,timeperiod= short_days); 
+    # if( (kama_short[-1] > kama_long[-1]) & (kama_short[-2] <= kama_long[-2]) & (kama_short[-1] > kama_short[-2])):
+    #     return 1
+    # if(( kama_short[-1] < kama_long[-1]) & (kama_short[-2] >= kama_long[-2]) & (kama_short[-1] < kama_short[-2])):
+    #     return 0
+    #std = np.std(kama_long[long_days:]);
+    
+    #sell
+    if ((kama_long[-1] / kama_long[-2])< g.return_radio ): #or ((close_short[-1]/close_short[-2])<=0.93):
+        return -1;
+    # if ((close_long[-1] / close_long[-2])<= 0.97 ): #or ((close_short[-1]/close_short[-2])<=0.93):
+    #      return -1;    
+    #attribute_history    
+    if(kama_long[-1]/kama_long[-2] >1.01):
+        return 1;
+    # if kama_short[-1] < kama_long[-1] and kama_short[-2] > kama_long[-2]:
+    #     #sell
+    #     return 0;
+    # if kama_short[-1] > kama_long[-1] and kama_short[-2] < kama_long[-2]:
+    #     #buy
+    #     return 1
+    return 0;    
+

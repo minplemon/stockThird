@@ -1,0 +1,196 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/12307
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+import pandas as pd
+from pandas import DataFrame,Series
+import numpy as np
+import statsmodels.formula as smFormula
+import statsmodels.api as smApi
+from operator import methodcaller
+from six import StringIO
+import datetime
+def initialize(context):
+    log.set_level('order', 'error')
+    g.indexList = ['801011','801012','801013','801014','801015','801016','801017','801018',
+                    '801021','801022','801023','801024','801032','801033','801034',
+                    '801035','801036','801037','801041','801051','801053','801054','801055',
+                    '801072','801073','801074','801075','801076',
+                    '801081','801082','801083','801084','801085','801092','801093','801094',
+                    '801101','801102','801111','801112','801121','801123','801131','801132',
+                    '801141','801142','801143','801151','801152','801153','801154',
+                    '801155','801156','801161','801162','801163','801164','801171','801172',
+                    '801173','801174','801175','801176','801177','801178','801181','801182',
+                    '801191','801192','801193','801194','801202','801203','801204','801205',
+                    '801211','801212','801213','801214','801215','801222','801223','801231',
+                    '801711','801712','801713','801721','801722','801723','801724','801725',
+                    '801731','801732','801733','801734','801741','801742','801743','801744',
+                    '801751','801752','801761','801881']
+
+    g.pastDay = 20 
+    df_week = read_file('df_week.csv')
+    dfa = read_file('dfa.csv')
+    dfb = read_file('dfb.csv')
+    dfc = read_file('dfc.csv')
+    open_week = read_file('open_week.csv')
+    df_low = read_file('df_low.csv')
+    g.df = pd.read_csv(StringIO(df_week),index_col = 0)[53:]
+    g.df1 = pd.read_csv(StringIO(dfa),index_col = 0)
+    g.df2 = pd.read_csv(StringIO(dfb),index_col = 0)
+    g.df3 = pd.read_csv(StringIO(open_week),index_col = 0)[53:]
+    g.df4 = pd.read_csv(StringIO(df_low),index_col = 0)
+    g.df5 = pd.read_csv(StringIO(dfc),index_col = 0)
+    g.df.columns = g.df1.columns = g.df2.columns = g.df3.columns = g.df4.columns = g.df5.columns = g.indexList
+    run_weekly(mainHerd, weekday = 1, time = 'open')
+def index_select(context):
+    g.current = context.current_dt.date()
+    cur_year = datetime.datetime.strftime(g.current,'%Y-%m-%d').split('-')[0]
+    cur_month = datetime.datetime.strftime(g.current,'%Y-%m-%d').split('-')[1]
+    cur_day = datetime.datetime.strftime(g.current,'%Y-%m-%d').split('-')[2]
+    cur = str(cur_year) + '-' + str(cur_month) + '-' + str(cur_day)
+    ks = []
+    for i in g.df.index.values:
+        df_year = i.split('/')[0]
+        df_month = i.split('/')[1]
+        df_day = i.split('/')[2]
+        k = str(df_year) + '-' + str(df_month) + '-' + str(df_day)
+        k = datetime.datetime.strptime(k,'%Y-%m-%d')-datetime.datetime.strptime(cur,'%Y-%m-%d')
+        ks.append(k)
+    g.N = 0
+    for i in range(len(ks)-1):
+        if ks[i] < datetime.timedelta(0) and ks[i+1] > datetime.timedelta(0):
+            g.N = i
+    index_new = []
+    for i in g.indexList:
+        M = 0
+        if g.df1[i].iloc[g.N] > g.df2[i].iloc[g.N] and g.df1[i].iloc[g.N-1] < g.df2[i].iloc[g.N-1]:
+            M += 1 
+        rs = g.df[i].iloc[g.N]-g.df3[i].iloc[g.N] 
+        if rs < 0:
+            M += 1 
+        if g.df[i].iloc[g.N] >= g.df4[i].iloc[g.N-1] and g.df[i].iloc[g.N] >= g.df4[i].iloc[g.N-2]:
+            M += 1
+        if M ==3:
+            index_new.append(i)
+    index_new_2 = []
+    for j in g.indexList:
+        G = 0
+        if g.df1[j].iloc[g.N] > g.df2[j].iloc[g.N] >g.df5[j].iloc[g.N] and g.df1[j].iloc[g.N-1] > g.df2[j].iloc[g.N-1] >g.df5[j].iloc[g.N-1]:
+            G += 1
+        if g.df1[j].iloc[g.N]/g.df2[j].iloc[g.N] > g.df1[j].iloc[g.N-1]/g.df2[j].iloc[g.N-1]:
+            G += 1
+        rs = g.df[j].iloc[g.N]/g.df3[j].iloc[g.N] -1
+        rs_1 = g.df[j].iloc[g.N-1]/g.df3[j].iloc[g.N-1]-1
+        if rs < 0 < rs_1 :
+            G += 1 
+        if G == 3:
+            index_new_2.append(j)
+    index_last= set(index_new)|set(index_new_2)
+    return index_last
+def filtVol(stocks):
+    returnStocks = []
+    varss = {}
+    for s in stocks:
+        varss[s] = variance(s)
+    var = pd.DataFrame(varss,index = stocks,columns = ['T'])
+    var.sort('T',ascending = True,inplace = True)
+    returnStocks = list(var.index.values)[:2]
+    return returnStocks
+def variance(stock):
+    close = attribute_history(stock, 20, '1d', 'close',df=False)['close']
+    narray=np.array(close)
+    sum1=narray.sum()
+    narray2=narray*narray
+    sum2=narray2.sum()
+    mean=sum1/len(close)
+    var=sum2/len(close)-mean**2
+    return var
+def filtMarketCap(context,stocks,index):
+    returnStocks = []
+    oriStocks = get_industry_stocks(index)
+    indexMarketCap = get_fundamentals(
+        query(valuation.code,
+            valuation.circulating_market_cap
+        ).filter(valuation.code.in_(oriStocks)
+        ).order_by(valuation.circulating_market_cap.desc()), date = context.current_dt)
+    indexMarketCap.index = indexMarketCap['code']
+    del indexMarketCap['code']
+    returnStocks = list(indexMarketCap.index.values)[:2]
+    return returnStocks
+def findLeadStock(context,index,method = 1):
+    oriStocks = get_industry_stocks(index)        
+    if method == 0:
+        filtStocks = filtVol(oriStocks)
+        return filtStocks
+    elif method == 1:
+        filtStocks = filtMarketCap(context,oriStocks,index)
+        return filtStocks
+    elif method == 2:
+        filtStocks = filtVol(oriStocks)
+        if len(filtStocks) != 0:
+            filtStocks = filtMarketCap(context,filtStocks,index)
+        else:
+            pass
+        return filtStocks
+    else:
+        return 'Error method order'
+def myFiltMavg(stocks):
+    returnArr = []
+    for s in stocks:
+        stocksPrice = attribute_history(s,1,'1d','close')['close'][-1]
+        ma5 = attribute_history(s,5,'1d','close')['close'].mean()
+        ma20 = attribute_history(s,20,'1d','close')['close'].mean()
+        if stocksPrice > ma5 and ma5 > ma20:
+            returnArr.append(s)
+        else:
+            continue
+    return returnArr
+def mainHandle(context,stocks,cash):
+    numStocks = len(stocks)
+    if numStocks > 0:
+        for security in context.portfolio.positions.keys():
+            if security in stocks:
+                continue
+            else:
+                order_target(security,0)
+                print("Selling %s" %(security))
+        if cash != 0:
+            for security in stocks:
+                currentData = get_current_data()
+                pauseSign = currentData[security].paused
+                STInfo = get_extras('is_st',security,start_date = context.current_dt, end_date=context.current_dt)
+                STSign = STInfo.iloc[-1]
+                if not pauseSign and not STSign.bool():
+                    order_value(security, cash/numStocks)
+                    print("Buying %s" % (security))
+                else:
+                    continue
+        else:
+            pass
+    else:
+        for security in context.portfolio.positions.keys():
+            order_target(security,0)
+
+def mainHerd(context):
+    herdStocks = []
+    rationalStocks = []
+
+    indexList = index_select(context)
+    for i,eachIndex in enumerate(indexList):
+        herdStocks += findLeadStock(context,eachIndex,method = 1)
+    herdStocks = myFiltMavg(herdStocks)
+    cash = context.portfolio.cash
+    mainHandle(context,herdStocks,cash)
+###########################################################################
+                           #止损
+###########################################################################
+
+
+    
+    
+    
+    

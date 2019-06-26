@@ -1,0 +1,82 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/13673
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+# 导入函数库
+import jqdata
+import datetime
+import pandas as pd
+import numpy as np
+
+# 初始化函数，设定基准等等
+def initialize(context):
+    # 设定沪深300作为基准
+    set_benchmark('000300.XSHG')
+    # 开启动态复权模式(真实价格)
+    set_option('use_real_price', True)
+    # 股票类每笔交易时的手续费是：买入时佣金万分之三，卖出时佣金万分之三加千分之一印花税, 每笔交易佣金最低扣5块钱
+    set_order_cost(OrderCost(close_tax=0.001, open_commission=0.0003, close_commission=0.0003, min_commission=5), type='stock')
+    # 运行时间
+    run_daily(before_open, time='08:00', reference_security='000300.XSHG')
+    run_daily(market_open, time='open', reference_security='000300.XSHG')
+    set_params(context)
+
+# 全局变量设置
+def set_params(context):
+    g.stock_list = ['601238.XSHG']  # 股票池
+    g.maxnum = 1  # 最大持仓数
+    g.lower = -2  # 下限
+    g.upper = 1  # 上限
+    
+    g.zscore_window = 60  # zscore窗口
+    g.ma_window = 20  # 均线窗口
+    log.set_level('order', 'error')
+
+# 获取当天买卖股票
+def get_buy_sell(context):
+    #stock_list = get_index_stocks('000016.XSHG')[:10]
+    yesterday = context.current_dt - datetime.timedelta(1)  # 昨天
+    count = g.zscore_window + g.ma_window - 1  # 2个窗口数和
+    price_df = get_price(g.stock_list, end_date=yesterday, fields='close', count=count).close
+    data = get_current_data()  # 当前时间数据
+    buy, sell = [], []
+    for code in g.stock_list:
+        if data[code].paused:  # 跳过停牌股
+            continue
+        single_df = price_df[code].to_frame('close')
+        single_df['ma'] = pd.rolling_mean(single_df.close, window=g.ma_window)  # 均线
+        single_df.dropna(inplace=True)
+        single_df['sub'] = single_df.close - single_df.ma  # 对差值进行回归
+        zscore_mean = single_df['sub'].mean(); zscore_std = single_df['sub'].std()  # 均值和标准差
+        zscore_value = (single_df['sub'][-1] - zscore_mean) / zscore_std  # zscore值
+        record(zscore=zscore_value)
+        record(lower=g.lower)
+        record(upper=g.upper)
+        hold = context.portfolio.positions.keys()
+        if zscore_value <= g.lower and code not in hold:  # 买入
+            buy.append(code)
+        if zscore_value >= g.upper and code in hold:  # 卖出
+            sell.append(code)
+    return buy, sell
+
+## 开盘前运行函数
+def before_open(context):
+    g.buy, g.sell = get_buy_sell(context)
+    
+## 开盘时运行函数
+def market_open(context):
+    # 先卖
+    for code in g.sell:
+        order_target(code, 0)
+    # 再买
+    for code in g.buy:
+        hold = len(context.portfolio.positions)
+        # 未达到最大持仓数
+        if hold < g.maxnum:
+            cash_per_stock = context.portfolio.available_cash / (g.maxnum - hold)  # 个股资金
+            order_target_value(code, cash_per_stock)
+    print('buy: %d  sell: %d  hold: %d' % (len(g.buy), len(g.sell), len(context.portfolio.positions)))

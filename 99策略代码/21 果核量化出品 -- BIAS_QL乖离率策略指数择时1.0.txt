@@ -1,0 +1,134 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/12925
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+import jqdata
+import copy
+import numpy as np
+import pandas as pd
+import random as ran 
+from datetime import datetime,timedelta
+import sklearn
+import talib as tl
+import math
+
+def initialize(context):
+    log.set_level('order', 'error')
+    set_benchmark('000906.XSHG')
+    set_option('use_real_price', True)
+    
+    context.maichu=[]
+    g.buyList = []
+    g.curPflInfo1 = {}
+
+    g.b1=0
+    g.holdSize = 50
+    g.stpPftPrice = 0.01
+    g.stpLosRate = -0.03
+
+def filter_paused_and_st_stock(context,stock_list):
+
+    current_data = get_current_data()
+    return [stock for stock in stock_list if not current_data[stock].paused 
+    and not current_data[stock].is_st and 'ST' not in current_data[stock].
+    name and '*' not in current_data[stock].name and '退' not in current_data[stock].name]
+    
+def selectstk(context,stklist,data):
+    
+    buyList = []
+
+    for stk in stklist:
+        close = history(80,'1d','close',stk,fq='none')
+        close = list(close[stk])
+        close.append(data[stk].close)
+        N=29
+        M=19
+        bias,biasma = calculation(N,M,stk,close)
+        # print(bias,biasma)
+        #bias_ql金叉买入
+        if bias[-2] < biasma[-2] and bias[-1] > biasma[-1]:
+            buyList.append(stk)
+        #bias_ql死叉卖出
+        if bias[-2] > biasma[-2] and bias[-1] < biasma[-1]:
+            for stk in g.curPflInfo1.keys() :
+                if stk in context.portfolio.positions.keys() :
+                    if stk not in context.maichu:
+                        context.maichu.append(stk)
+    return buyList
+    
+# BIAS_QL计算:
+def calculation(N,M,stk,close):
+    N=N
+    M=M
+    close = close
+    bias = []
+    biasma = []
+    
+    for i in range(N):
+        bias1 = math.ceil((close[len(close)-i-1] - MAcalcu(close,i,N)) / MAcalcu(close,i,N) * 100*10000 ) / 10000 
+        if bias1 > 0 :
+            bias1 = math.ceil(bias1 * 1000) / 1000
+        if bias1 < 0 :
+            bias1 = math.floor(bias1*1000) / 1000
+        bias.append(bias1)
+    
+    bias=list(reversed(bias))
+    for i in range(M):
+        biasma1 = MAcalcu(bias,i,M)
+        if biasma1 > 0:
+            biasma1 = math.ceil(biasma1*1000) / 1000
+        if biasma1 < 0 :
+            biasma1 = math.floor(biasma1*1000) / 1000
+        biasma.append(biasma1)
+    biasma=list(reversed(biasma))
+
+    return bias,biasma
+    
+def MAcalcu(x,j,n):
+    avg = 0 
+    if n <= len(x):
+        for i in range(n):
+            avg += x[len(x)-i-j-1]
+        return avg/n
+        
+def before_trading_start(context):
+    g.allStocksmacdkdj = ['000906.XSHG']
+        
+def handle_data(context, data):
+    current_data = get_current_data()
+
+    if context.current_dt.hour == 14 and context.current_dt.minute == 58 :
+        buylist = []
+        buylist = selectstk(context,g.allStocksmacdkdj,data)
+        for stk in buylist:
+            if stk not in context.portfolio.positions.keys() :
+                cash = context.portfolio.available_cash
+                order_target_value(stk,cash)#200w
+                stkInfo2 ={}
+                stkInfo2['holddays'] = 1
+                stkInfo2['show']= 1
+                stkInfo2['K1']= 1
+                stkInfo2['N1']= 1
+                stkInfo2['y']= 0.05
+                stkInfo2['i1']= 1
+                stkInfo2['zhiying']= 1
+                stkInfo2['zhangfu']= 1
+                stkInfo2['zhangfucishu'] = 0
+                g.curPflInfo1[stk] = stkInfo2
+    
+    popList3 = []
+    if context.current_dt.hour == 14 and context.current_dt.minute == 59 :
+        for stk in g.curPflInfo1.keys() :
+            if stk in context.portfolio.positions.keys() :
+                if stk in context.maichu:
+                    order_target(stk, 0)
+                    popList3.append(stk)
+        for stk in popList3 :
+            if stk in g.curPflInfo1.keys() :
+                g.curPflInfo1.pop(stk)
+            if stk in context.maichu:
+                context.maichu.remove(stk)

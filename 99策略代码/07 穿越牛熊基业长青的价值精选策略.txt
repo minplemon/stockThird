@@ -1,0 +1,223 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/13382
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+'''
+投资程序：
+霍华．罗斯曼强调其投资风格在于为投资大众建立均衡、且以成长为导向的投资组合。选股方式偏好大型股，
+管理良好且为领导产业趋势，以及产生实际报酬率的公司；不仅重视公司产生现金的能力，也强调有稳定成长能力的重要。
+总市值大于等于50亿美元。
+良好的财务结构。
+较高的股东权益报酬。
+拥有良好且持续的自由现金流量。
+稳定持续的营收成长率。
+优于比较指数的盈余报酬率。
+'''
+
+import pandas as pd
+import numpy as np
+import jqdata
+# 初始化函数，设定基准等等
+def initialize(context):
+    # 设定沪深300作为基准
+    set_benchmark('000300.XSHG')
+    # 开启动态复权模式(真实价格)
+    set_option('use_real_price', True)
+    # 输出内容到日志 log.info()
+    log.info('初始函数开始运行且全局只运行一次')
+    # 过滤掉order系列API产生的比error级别低的log
+    # log.set_level('order', 'error')
+    #策略参数设置
+    #操作的股票列表
+    g.buy_list = []
+    ### 股票相关设定 ###
+    # 股票类每笔交易时的手续费是：买入时佣金万分之三，卖出时佣金万分之三加千分之一印花税, 每笔交易佣金最低扣5块钱
+    set_order_cost(OrderCost(close_tax=0.001, open_commission=0.0003, close_commission=0.0003, min_commission=5), type='stock')
+    
+    # 每月第5个交易日进行操作
+    # 开盘前运行
+    run_monthly(before_market_open,5,time='before_open', reference_security='000300.XSHG') 
+    # 开盘时运行
+    run_monthly(market_open,5,time='open', reference_security='000300.XSHG')
+    
+## 开盘前运行函数     
+def before_market_open(context):
+    #获取要操作的股票列表
+    temp_list = get_stock_list(context)
+
+    #获取满足条件的股票列表
+    temp_list = get_stock_list(context)
+    log.info('满足条件的股票有%s只'%len(temp_list))
+    #按市值进行排序
+    g.buy_list = get_check_stocks_sort(context,temp_list)
+
+## 开盘时运行函数
+def market_open(context):
+    #卖出不在买入列表中的股票
+    sell(context,g.buy_list)
+    #买入不在持仓中的股票，按要操作的股票平均资金
+    buy(context,g.buy_list)
+#交易函数 - 买入
+def buy(context, buy_lists):
+    # 获取最终的 buy_lists 列表
+    # 买入股票
+    if len(buy_lists)>0:
+        #分配资金
+        cash = context.portfolio.available_cash/(len(buy_lists)*1.0)
+        # 进行买入操作
+        for s in buy_lists:
+            order_value(s,cash)
+       
+# 交易函数 - 出场
+def sell(context, buy_lists):
+    # 获取 sell_lists 列表
+    hold_stock = context.portfolio.positions.keys()
+    for s in hold_stock:
+        #卖出不在买入列表中的股票
+        if s not in buy_lists:
+            order_target_value(s,0)   
+
+#按市值进行排序   
+#从大到小
+def get_check_stocks_sort(context,check_out_lists):
+    df = get_fundamentals(query(valuation.circulating_cap,valuation.pe_ratio,valuation.code).filter(valuation.code.in_(check_out_lists)),date=context.previous_date)
+    #asc值为0，从大到小
+    df = df.sort('circulating_cap',ascending=0)
+    out_lists = list(df['code'].values)
+    return out_lists
+    
+'''
+1.总市值≧市场平均值*1.0。
+2.最近一季流动比率≧市场平均值（流动资产合计/流动负债合计）。
+3.近四季股东权益报酬率（roe）≧市场平均值。
+4.近五年自由现金流量均为正值。（cash_flow.net_operate_cash_flow - cash_flow.net_invest_cash_flow）
+5.近四季营收成长率介于6%至30%（）。    'IRYOY':indicator.inc_revenue_year_on_year, # 营业收入同比增长率(%)
+6.近四季盈余成长率介于8%至50%。(eps比值)
+'''
+def get_stock_list(context):
+    temp_list = list(get_all_securities(types=['stock']).index)    
+    #剔除停牌股
+    all_data = get_current_data()
+    temp_list = [stock for stock in temp_list if not all_data[stock].paused]
+    #获取多期财务数据
+    panel = get_data(temp_list,4)
+    #1.总市值≧市场平均值*1.0。
+    df_mkt = panel.loc[['circulating_market_cap'],3,:]
+    df_mkt = df_mkt[df_mkt['circulating_market_cap']>df_mkt['circulating_market_cap'].mean()]
+    l1 = set(df_mkt.index)
+    
+    #2.最近一季流动比率≧市场平均值（流动资产合计/流动负债合计）。
+    df_cr = panel.loc[['total_current_assets','total_current_liability'],3,:]
+    #替换零的数值
+    df_cr = df_cr[df_cr['total_current_liability'] != 0]
+    df_cr['cr'] = df_cr['total_current_assets']/df_cr['total_current_liability']
+    df_cr_temp = df_cr[df_cr['cr']>df_cr['cr'].mean()]
+    l2 = set(df_cr_temp.index)
+
+    #3.近四季股东权益报酬率（roe）≧市场平均值。
+    l3 = {}
+    for i in range(4):
+        roe_mean = panel.loc['roe',i,:].mean()
+        df_3 = panel.iloc[:,i,:]
+        df_temp_3 = df_3[df_3['roe']>roe_mean]
+        if i == 0:    
+            l3 = set(df_temp_3.index)
+        else:
+            l_temp = df_temp_3.index
+            l3 = l3 & set(l_temp)
+    l3 = set(l3)
+
+    #4.近五年自由现金流量均为正值。（cash_flow.net_operate_cash_flow - cash_flow.net_invest_cash_flow）
+    y = context.current_dt.year
+    l4 = {}
+    for i in range(1,6):
+        df = get_fundamentals(query(cash_flow.code,cash_flow.statDate,cash_flow.net_operate_cash_flow , \
+                                    cash_flow.net_invest_cash_flow),statDate=str(y-i))
+        if len(df) != 0:
+            df['FCF'] = df['net_operate_cash_flow']-df['net_invest_cash_flow']
+            df = df[df['FCF']>0]
+            l_temp = df['code'].values
+            if len(l4) != 0:
+                l4 = set(l4) & set(l_temp)
+            l4 = l_temp
+        else:
+            continue
+    l4 = set(l4)
+    #print 'test'
+    #print l4
+    #5.近四季营收成长率介于6%至30%（）。    'IRYOY':indicator.inc_revenue_year_on_year, # 营业收入同比增长率(%)
+    l5 = {}
+    for i in range(4):
+        df_5 = panel.iloc[:,i,:]
+        df_temp_5 = df_5[(df_5['inc_revenue_year_on_year']>6) & (df_5['inc_revenue_year_on_year']<30)]
+        if i == 0:    
+            l5 = set(df_temp_5.index)
+        else:
+            l_temp = df_temp_5.index
+            l5 = l5 & set(l_temp)
+    l5 = set(l5)
+    
+    #6.近四季盈余成长率介于8%至50%。(eps比值)
+    l6 = {}
+    for i in range(4):
+        df_6 = panel.iloc[:,i,:]
+        df_temp = df_6[(df_6['eps']>0.08) & (df_6['eps']<0.5)]
+        if i == 0:    
+            l6 = set(df_temp.index)
+        else:
+            l_temp = df_temp.index
+            l6 = l6 & set(l_temp)
+    l6 = set(l6)
+    
+    return list(l1 & l2 &l3 & l4 & l5 & l6)
+    
+#去极值（分位数法）  
+def winsorize(se):
+    q = se.quantile([0.025, 0.975])
+    if isinstance(q, pd.Series) and len(q) == 2:
+        se[se < q.iloc[0]] = q.iloc[0]
+        se[se > q.iloc[1]] = q.iloc[1]
+    return se
+    
+#获取多期财务数据内容
+def get_data(pool, periods):
+    q = query(valuation.code, income.statDate, income.pubDate).filter(valuation.code.in_(pool))
+    df = get_fundamentals(q)
+    df.index = df.code
+    stat_dates = set(df.statDate)
+    stat_date_stocks = { sd:[stock for stock in df.index if df['statDate'][stock]==sd] for sd in stat_dates }
+
+    def quarter_push(quarter):
+        if quarter[-1]!='1':
+            return quarter[:-1]+str(int(quarter[-1])-1)
+        else:
+            return str(int(quarter[:4])-1)+'q4'
+
+    q = query(valuation.code,valuation.code,valuation.circulating_market_cap,balance.total_current_assets,balance.total_current_liability,\
+    indicator.roe,cash_flow.net_operate_cash_flow,cash_flow.net_invest_cash_flow,indicator.inc_revenue_year_on_year,indicator.eps
+              )
+
+    stat_date_panels = { sd:None for sd in stat_dates }
+
+    for sd in stat_dates:
+        quarters = [sd[:4]+'q'+str(int(sd[5:7])/3)]
+        for i in range(periods-1):
+            quarters.append(quarter_push(quarters[-1]))
+        nq = q.filter(valuation.code.in_(stat_date_stocks[sd]))
+        pre_panel = { quarter:get_fundamentals(nq, statDate = quarter) for quarter in quarters }
+        for thing in pre_panel.values():
+            thing.index = thing.code.values
+        panel = pd.Panel(pre_panel)
+        panel.items = range(len(quarters))
+        stat_date_panels[sd] = panel.transpose(2,0,1)
+
+    final = pd.concat(stat_date_panels.values(), axis=2)
+
+    return final.dropna(axis=2)
+    
+    
+    

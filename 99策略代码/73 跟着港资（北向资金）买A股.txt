@@ -1,0 +1,155 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/13848
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+import talib
+from prettytable import PrettyTable 
+import pandas 
+import datetime
+import time
+from jqdata import *
+
+def initialize(context):
+    set_commission(PerTrade(buy_cost=0.0003, sell_cost=0.0013, min_cost=5))
+    set_option('use_real_price', True)
+    set_benchmark('000300.XSHG')
+    log.set_level('order', 'error')
+    log.set_level('history', 'error')
+    g.buy_stock_count = 1
+    g.hour = 9
+    g.minute = 30
+    
+def handle_data(context, data):
+    hour = context.current_dt.hour
+    minute = context.current_dt.minute
+    buy_stocks = []
+    if hour == g.hour and minute == g.minute:
+        buy_stocks = select_stocks(context,data)
+        print '前一个交易日港资（北向资金）净买额最高的股票：\n'
+        for stock in buy_stocks:
+            print show_stock(stock)
+        adjust_position(context, buy_stocks)
+        print get_portfolio_info_text(context,buy_stocks)
+        
+def select_stocks(context,data):
+    date = context.current_dt.strftime("%Y-%m-%d")
+    today = datetime.datetime.strptime(date, "%Y-%m-%d").date()
+    yesterday = shifttradingday(today ,shift = -1)
+    print '前一个交易日:',yesterday 
+    q = query(finance.STK_EL_TOP_ACTIVATE).filter(finance.STK_EL_TOP_ACTIVATE.day == yesterday )
+    df = finance.run_query(q)
+    df['net'] = df.buy - df.sell
+    df = df.sort(columns = ['net'] , axis = 0, ascending = False)
+    df = df[(df.link_id != 310003 ) & (df.link_id != 310004 )]
+    stock_list = list(df['code'])
+    # 过滤掉停牌的和ST的
+    #stock_list = filter_paused_and_st_stock(stock_list)
+    #过滤掉创业板
+    #stock_list = filter_gem_stock(context, stock_list)
+    # 过滤掉上市超过1年的
+    #stock_list = filter_old_stock(context, stock_list)
+    # 过滤掉现在涨停或者跌停的
+    #stock_list = filter_limit_stock(context, stock_list)
+    #stock_list = filter_limit_stock(context, data, stock_list)
+    #选取前N只股票放入“目标股票池”
+    stock_list = stock_list[:g.buy_stock_count]  
+    return stock_list
+        
+def filter_paused_and_st_stock(stock_list):
+    current_data = get_current_data()
+    return [stock for stock in stock_list if not current_data[stock].paused 
+    and not current_data[stock].is_st and 'ST' not in current_data[stock].
+    name and '*' not in current_data[stock].name and '退' not in current_data[stock].name]
+    
+def filter_gem_stock(context, stock_list):
+    return [stock for stock in stock_list  if stock[0:3] != '300']
+
+def filter_old_stock(context, stock_list):
+    tmpList = []
+    for stock in stock_list :
+        days_public=(context.current_dt.date() - get_security_info(stock).start_date).days
+        # 上市未超过1年
+        if  days_public < 365 :
+            tmpList.append(stock)
+    return tmpList
+    
+def filter_limit_stock(context, data, stock_list):
+    tmpList = []
+    current_data = get_current_data()
+    for stock in stock_list:
+        # 未涨停，也未跌停
+        if (data[stock].low_limit < data[stock].close < data[stock].high_limit) and (current_data[stock].low_limit < data[stock].close < current_data[stock].high_limit):
+            tmpList.append(stock)
+    return tmpList
+    
+def adjust_position(context, buy_stocks):
+    # 现持仓的股票，如果不在“目标池”中，且未涨停，就卖出
+    if len(context.portfolio.positions)>0:
+        last_prices = history(1, '1m', 'close', security_list=context.portfolio.positions.keys())
+        for stock in context.portfolio.positions.keys():
+            if stock not in buy_stocks :
+                curr_data = get_current_data()
+                if last_prices[stock][-1] < curr_data[stock].high_limit:
+                    order_target_value(stock, 0)
+    # 依次买入“目标池”中的股票            
+    for stock in buy_stocks:
+        position_count = len(context.portfolio.positions)
+        if g.buy_stock_count > position_count:
+            value = context.portfolio.cash / (g.buy_stock_count - position_count)
+            if context.portfolio.positions[stock].total_amount == 0:
+                order_target_value(stock, value)
+                
+def shifttradingday(date,shift):
+    #获取N天前的交易日日期
+    # 获取所有的交易日，返回一个包含所有交易日的 list,元素值为 datetime.date 类型.
+    tradingday = get_all_trade_days()
+    # 得到date之后shift天那一天在列表中的行标号 返回一个数
+    shiftday_index = list(tradingday).index(date)+shift
+    # 根据行号返回该日日期 为datetime.date类型
+    return tradingday[shiftday_index]
+
+def show_stock(stock):
+    '''
+    获取股票代码的显示信息    
+    :param stock: 股票代码，例如: '603822.SH'
+    :return: str，例如：'603822 嘉澳环保'
+    '''
+    return u"%s %s" % (stock[:6], get_security_info(stock).display_name)
+    
+def get_portfolio_info_text(context,new_stocks,op_sfs=[0]):
+    # new_stocks是需要持仓的股票列表
+    sub_str = ''
+    table = PrettyTable(["仓号","股票", "持仓", "当前价", "盈亏率","持仓比"])  
+    for sf_id in range(len(context.subportfolios)):
+        cash = context.subportfolios[sf_id].cash
+        p_value = context.subportfolios[sf_id].positions_value
+        total_values = p_value +cash
+        if sf_id in op_sfs:
+            sf_id_str = str(sf_id) + ' *'
+        else:
+            sf_id_str = str(sf_id)
+        for stock in context.subportfolios[sf_id].long_positions.keys():
+            position = context.subportfolios[sf_id].long_positions[stock]
+            if sf_id in op_sfs and stock in new_stocks:
+                stock_str = show_stock(stock) + ' *'
+            else:
+                stock_str = show_stock(stock)
+            stock_raite = (position.total_amount * position.price) / total_values * 100
+            table.add_row([sf_id_str,
+                stock_str,
+                position.total_amount,
+                position.price,
+                "%.2f%%"%((position.price - position.avg_cost) / position.avg_cost * 100), 
+                "%.2f%%"%(stock_raite)]
+                )
+        if sf_id < len(context.subportfolios) - 1:
+            table.add_row(['----','---------------','-----','----','-----','-----'])
+        sub_str += '[仓号: %d] [总值:%d] [持股数:%d] [仓位:%.2f%%] \n'%(sf_id,
+            total_values,
+            len(context.subportfolios[sf_id].long_positions)
+            ,p_value*100/(cash+p_value))
+    print '子仓详情:\n' + sub_str + str(table)

@@ -1,0 +1,47 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/11044
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+import pandas as pd
+import jqdata
+
+def initialize(context):
+    g.index='000300.XSHG'
+    set_option('use_real_price', True)
+    set_order_cost(OrderCost(open_tax=0, close_tax=0, open_commission=0, close_commission=0, close_today_commission=0, min_commission=0), type='stock')
+    set_benchmark('000300.XSHG')
+    
+def calalpha(context):
+    stock_list=get_index_stocks(g.index)
+    dt=context.previous_date
+    df = get_price(stock_list,end_date=dt,count=1,fields=['money'])
+    df = df['money'].T
+    df.columns=['alpha']
+    result=df.sort(['alpha'],ascending=False)
+    return result
+    
+def before_trading_start(context):
+    result=list((calalpha(context)['alpha'].iloc[0:40]).keys())
+    g.result=result
+    
+def handle_data(context, data):
+    tobuy_list=g.result
+    holdings=context.portfolio.positions.keys()
+    for stock in  holdings:
+        if stock not in tobuy_list:
+            print('----------')
+            print(stock,'Shorting')
+            order_target_value(stock,0)
+        else:
+            print('----------')
+            print(stock,'Longing')
+    cash=context.portfolio.cash
+    num=len(tobuy_list)
+    for eachsec in tobuy_list:
+        order_value(eachsec,int(cash/num))
+    
+    

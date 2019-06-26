@@ -1,0 +1,132 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/11700
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+# 标题：低回撤，PE分仓
+# 作者：桑梓
+#自定义数据是股指ETF占的仓位
+from __future__ import division 
+import numpy as np
+import pandas as pd
+import bisect
+
+def initialize(context):
+    g.flag = False
+    run_monthly(monthly, 1, time='open')
+    set_benchmark('000300.XSHG')    
+    #g.CN10y_bond=0.03
+    log.set_level('order', 'error')
+
+    g.HoldLevel=0
+    g.LastHoldLevel=0
+    
+    g.HoldLevel1=0
+    g.HoldLevel2=0.2
+    g.HoldLevel3=0.4
+    g.HoldLevel4=0.6
+    g.HoldLevel5=0.75
+    g.HoldLevel6=0.9
+    
+    #创建8个独立的仓位
+    init_cash = context.portfolio.starting_cash  #获取初始资金
+    init_cash = context.portfolio.starting_cash/8  #将初始资金等分为10份
+    set_subportfolios([SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock'),\
+                       SubPortfolioConfig(cash=init_cash, type='stock')]) 
+                       
+    g.stocks = {
+                'hs300':['000300.XSHG','510300.XSHG',context.subportfolios[0],0,14.10,44.42],
+                'zzhb':['000827.XSHG','512580.XSHG',context.subportfolios[1],1,26.78,72.29], #中证保
+                'zz500':['000905.XSHG','510510.XSHG',context.subportfolios[2],2,21.99,69.81], #中证500
+                'hlzz':['000015.XSHG','510880.XSHG',context.subportfolios[3],3,8.40,46.23], #红利指数
+                'cyb':['399006.XSHE','159915.XSHE',context.subportfolios[4],4,27.61,121.85], #创业板
+                'zztmt':['000998.XSHG','150203.XSHE',context.subportfolios[5],5,28.15,108.92], #tmt
+                'yy':['000933.XSHG','512010.XSHG',context.subportfolios[6],6,22.22,66.82], #医药
+                'zz100':['000903.XSHG','150012.XSHE',context.subportfolios[7],7,9.81,36.59] #中证100
+                }
+                
+def monthly(context):
+    g.flag = True
+    
+def Relation(n,MaxRatio,MinRatio):
+    if n>=MaxRatio*0.9+MinRatio:
+        HoldLevel=g.HoldLevel1
+    elif n>MaxRatio*0.8+MinRatio:
+        HoldLevel=g.HoldLevel2
+    elif n>MaxRatio*0.7+MinRatio:
+        HoldLevel=g.HoldLevel3
+    elif n>MaxRatio*0.6+MinRatio:
+        HoldLevel=g.HoldLevel4
+    elif n>MaxRatio*0.5+MinRatio:   
+        HoldLevel=g.HoldLevel5
+    elif n>MaxRatio*0.3+MinRatio:  #16.92  0.4=19.36
+        HoldLevel=g.HoldLevel6
+    else:
+        HoldLevel=1
+    return HoldLevel
+    #else:
+    #    k=(g.MinHoldLevel-g.MaxHoldLevel)/(g.MaxRatio-g.MinRatio)
+    #    b=g.MinHoldLevel-g.MinRatio*k
+    #    g.HoldLevel=k*n+b
+    #Debug:
+    #print 'k=(' +str(g.MaxHoldLevel)+'-'+str(g.MinHoldLevel) + ')/' +\
+    #'('+str(g.MaxRatio)+'-'+str(g.MinRatio)+')'+' = '+str(k)
+    #print 'HoldLevel=' +str(k) + '*N' + '+' +str(b)
+
+def PeRatio(code,context): # 计算当前指数PE
+    date = context.current_dt
+    stocks = get_index_stocks(code, date)
+    q = query(valuation).filter(valuation.code.in_(stocks))
+    df = get_fundamentals(q, date)
+    if len(df)>0:
+        pe2 = len(df)/sum([1/p if p>0 else 0 for p in df.pe_ratio])
+        return pe2
+    else:
+        return float('NaN')
+        
+#def ChangeHoldLevel(stock,NewHoldLevel,context):
+#    order_target_value(g.stocks[stock][1],NewHoldLevel*g.stocks[stock][2],pindex=g.stocks[stock][3])
+    #order_target_value(g.Test_bond,(1-NewHoldLevel)*AllMoney,None)
+
+def handle_data(context, data):
+    #if context.current_dt.isoweekday()!=1:      #ne Marcher que Lundi. 
+    #    return
+    #N= (1/PeRatio(get_current_data()))/g.CN10y_bond
+    if g.flag == True:
+        for stock in g.stocks:
+            index_pe = PeRatio(g.stocks[stock][0],context)
+        
+            MaxRatio1 = g.stocks[stock][5]
+            MinRatio = g.stocks[stock][4]
+            MaxRatio = MaxRatio1-MinRatio
+        
+            HoldLevel = Relation(index_pe,MaxRatio,MinRatio)
+        
+            trade_code = g.stocks[stock][1]
+            cash = g.stocks[stock][2].total_value * HoldLevel
+            inde = g.stocks[stock][3]
+
+        
+            order_target_value(trade_code,cash,pindex=inde)
+        g.flag = False
+        
+        
+        
+'''        
+    N = PeRatio(code,context)
+    HoldLevel = Relation(N)
+    ChangeHoldLevel(HoldLevel,context.portfolio.total_value)
+    print 'PE:%.2f'%N
+    print "Holdlevel is %.2f" % HoldLevel
+    
+    record(name=g.HoldLevel)
+'''

@@ -1,0 +1,465 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/16022
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+# 导入函数库
+from jqdata import *
+import datetime
+import time
+import talib
+
+'''
+ArrayManager:
+用于拼接K线的类，该策略基于不均匀的K线完成，在固定时间输出bar（日内，如早盘收盘时）
+而当前平台未推出该功能，因而自定义ArrayManager类来实现          
+'''
+class ArrayManager(object):
+    
+    # 初始化函数，设定基准等等
+    def __init__(self, size=100):
+        # 设定Array的缓存大小
+        self.size = size  
+        
+        # 基本指标与基本指标的Array字典初始化（用于K线按收盘时间分割）
+        # 在这里VarArrays指的是全新K线的数据，以字典的形式存放，Vars是更新K线前的缓存
+        self.Vars = {'close':False,
+                    'open':False,
+                    'high':False,
+                    'low':False}
+                    
+        self.VarsArrays = {'close':np.zeros(size),
+                          'open':np.zeros(size),
+                          'high':np.zeros(size),
+                          'low':np.zeros(size)}
+    
+    # 更新Array，形成新的bar数据，后续指标等都是基于该Array进行计算    
+    def updateBarArray(self):
+        for var in self.VarsArrays.keys():
+            self.VarsArrays[var][0:self.size-1] = self.VarsArrays[var][1:self.size]
+            self.VarsArrays[var][-1] = self.Vars[var]
+    
+    # 更新缓存（即为更新Array做准备）        
+    def updateBar(self,close,high,low,open):
+        # 如果缓存Vars没有数据，或者被clear，则初次写入
+        if self.Vars['close'] == False:
+            self.Vars['close'] = close
+            self.Vars['high'] = high
+            self.Vars['low'] = low
+            self.Vars['open'] = open
+        else:
+            # 如果有数据，则实时更新
+            self.Vars['close'] = close
+            self.Vars['high'] = max(self.Vars['high'],high)
+            self.Vars['low'] = min(self.Vars['low'],low)
+            
+   
+    # 清除Bar数据       
+    def clear(self):
+        self.Vars['open']= False
+        self.Vars['close']= False
+        self.Vars['high'] = False
+        self.Vars['low']= False
+    
+    # 输出当前Array
+    def exportArray(self,field):
+        return self.VarsArrays[field]
+    # 输出当前缓存变量  
+    def exportVar(self,field):
+        return self.Vars[field]
+    
+    # 输出10天内的最高价    
+    def Highest_10(self,future):
+        return self.VarsArrays['close'][-10*g.TodayBar[future]-1:-1].max()
+    
+    # 输出10天内的最低价    
+    def Lowest_10(self,future):
+        return self.VarsArrays['close'][-10*g.TodayBar[future]-1:-1].min()
+
+
+def initialize(context):
+    # 设置参数
+    set_parameter(context)
+    # 设定基准银华日利，在多品种的回测当中基准没有参考意义
+    set_benchmark('511880.XSHG')
+    # 开启动态复权模式(真实价格)
+    set_option('use_real_price', True)
+    # 过滤掉order系列API产生的比error级别低的log
+    log.set_level('order', 'error')
+    ### 期货相关设定 ###
+    # 设定账户为金融账户
+    set_subportfolios([SubPortfolioConfig(cash=context.portfolio.starting_cash, type='futures')])
+    # 期货类每笔交易时的手续费是：买入时万分之1,卖出时万分之1,平今仓为万分之1
+    set_order_cost(OrderCost(open_commission=0.0001, close_commission=0.0001,close_today_commission=0.0001), type='index_futures')
+    # 设定保证金比例
+    set_option('futures_margin_rate', 0.15)
+    # 设置滑点（单边万5，双边千1）
+    set_slippage(PriceRelatedSlippage(0.001),type='future')
+    # 开盘前运行
+    run_daily( before_market_open, time='before_open', reference_security='AG8888.XSGE')
+    # 开盘时运行
+    run_daily( DataPrepare, time='every_bar', reference_security='AG8888.XSGE')
+    # 收盘后运行
+    run_daily( after_market_close, time='after_close', reference_security='AG8888.XSGE')
+    #切割函数
+    
+def set_parameter(context):
+    #######变量设置########
+    # 字典信息代表各品种分别对应变量
+    g.AM = {}  # ArrayManger
+    g.Data = {}  # 数据字典
+    g.LastPrice = {}  # 最新价格字典（用于吊灯止损）
+    g.HighPrice = {} # 各品种最高价字典（用于吊灯止损）
+    g.LowPrice = {} # 各品种最低价字典（用于吊灯止损）
+    g.TradeLots = {}  # 各品种的交易手数信息
+    g.Price_dict = {} # 各品种价格列表字典
+    g.Times = {} # 计数器（用于防止止损重入）
+    g.TodayBar = {} # 每个future当日的bar数量
+    g.MidLine = {} # 布林带中线
+    g.ATR = {} # ATR数组
+    g.Reentry_long = False # 止损后重入标记
+    g.Reentry_short = False # 止损后重入标记
+    #######参数设置########
+    g.Signal = 0 # 交易判定信号
+    g.offset = 2 # 通道倍数
+    g.NATRstop = 4
+    g.Window = 15
+    g.MarginRate = 1
+    g.MappingReal = {} # 真实合约映射（key为symbol，value为主力合约）
+    g.MappingIndex = {} # 指数合约映射 （key为 symbol，value为指数合约
+    # 交易的期货品种信息
+    g.instruments = ['JD','RU','RB','I','J','TA']
+    #g.instruments = ['RB']
+    # 切割K线时间，每次收盘时切割（由于夜盘收盘时间不定，因而将其设置为早盘第一个15分钟时切）
+    g.CloseMarket = ['0915','1130','1500']
+    # 运行Bar计算函数的时间（每分钟运行计算会导致速度奇慢，因而取最小颗粒度15分钟）
+    g.DatePrepareTime = ['00','15','30','45']
+    #将初始数据传入future_list
+    set_future_list(context)
+
+
+    # 数据初始化
+def set_future_list(context):
+    for ins in g.instruments:
+        idx = get_future_code(ins)
+        dom = get_dominant_future(ins)
+        # 填充映射字典
+        g.MappingIndex[ins] = idx
+        g.MappingReal[ins] = dom
+        g.Times[idx] = 0
+          
+                
+## 开盘前运行函数
+def before_market_open(context):
+    
+    # 过滤无主力合约的品种，传入并修改期货字典信息
+    for ins in g.instruments:
+        RealFuture = get_dominant_future(ins)
+        IndexFuture = get_future_code(ins)
+        
+        # 以下逻辑判断该品种是否有夜盘，并计算TodayBar
+        g.Data[IndexFuture] = attribute_history(IndexFuture,120, unit='60m',fields = ['close'])
+        HourList = [x.strftime('%H') for x in g.Data[IndexFuture].index[:]]
+        if '21' in HourList: 
+            g.TodayBar[IndexFuture] = 3
+        else:
+            g.TodayBar[IndexFuture] = 2
+        
+        
+        if RealFuture == '':
+            pass
+        else:
+            # 判断是否执行replace_old_futures
+            if RealFuture == g.MappingReal[ins]:
+                pass
+            else:
+                replace_old_futures(context,ins,RealFuture)
+                g.HighPrice[IndexFuture] = False
+                g.LowPrice[IndexFuture] = False
+                g.Times[IndexFuture] = 0
+                g.MappingReal[ins] = RealFuture
+                
+            # 计算交易手数
+            lots = context.portfolio.starting_cash/len(g.instruments)
+            g.TradeLots[IndexFuture] = get_lots(lots,ins)
+
+  
+def DataPrepare(context):
+    # 每15分钟跑一次数据接合模块
+    if str(context.current_dt.time().strftime('%M')) in g.DatePrepareTime:
+        for ins in g.instruments:
+            IndexFuture = get_future_code(ins)
+            RealFuture = get_dominant_future(ins)
+            # 获取历史数据
+            g.LastPrice[IndexFuture] = attribute_history(IndexFuture,50, unit='15m',fields = ['close','open','high','low'])
+            # 如果当前时间在该品种实际交易时间内（基于15分钟bar），则执行拼接
+            if str(context.current_dt.time()) in [x.strftime('%H:%M:%S') for x in g.LastPrice[IndexFuture].index[:]]:
+                # 初始化
+                if IndexFuture not in g.AM.keys():
+                    g.AM[IndexFuture] = ArrayManager()
+                    g.AM[IndexFuture].updateBar(g.LastPrice[IndexFuture]['close'][-1],
+                                            g.LastPrice[IndexFuture]['high'][-1],
+                                            g.LastPrice[IndexFuture]['low'][-1],
+                                            g.LastPrice[IndexFuture]['open'][-1])
+                else:
+                    # 收盘时间时输出新Bar
+                    if g.LastPrice[IndexFuture].index[-1].strftime('%H%M') in g.CloseMarket :
+                        # 没有夜盘的品种在9点15分不输出新Bar
+                        if g.TodayBar[IndexFuture] == 2 and g.LastPrice[IndexFuture].index[-1].strftime('%H%M') == '0915':
+                            pass
+                        else:
+                            # updateBarArray首先把新数据填充到Array中，老数据向前移动1位
+                            # clear同时删除缓存
+                            g.AM[IndexFuture].updateBarArray()
+                            g.AM[IndexFuture].clear()
+                            # 【每次在输出新的Bar的时候执行指标计算与交易逻辑】
+                            market_open(context)
+                    # 非收盘时间更新缓存（4个价格）
+                    else:
+                        g.AM[IndexFuture].updateBar(g.LastPrice[IndexFuture]['close'][-1],
+                                            g.LastPrice[IndexFuture]['high'][-1],
+                                            g.LastPrice[IndexFuture]['low'][-1],
+                                            g.LastPrice[IndexFuture]['open'][-1])
+
+
+## 开盘时运行函数
+def market_open(context):
+    # 输出函数运行时间
+    log.info('函数运行时间(market_open):'+str(context.current_dt.time()))
+    # 主循环函数（遍历各期货品种）
+    
+    for ins in g.MappingReal.keys():
+        # 计算今日的Bar数（用以确定ATR的参数）
+        IndexFuture = get_future_code(ins)
+        RealFuture = get_dominant_future(ins)
+
+        # ATR计算  
+        g.low = g.AM[IndexFuture].exportArray('low')[-g.TodayBar[IndexFuture]*g.Window-1:]
+        g.high = g.AM[IndexFuture].exportArray('high')[-g.TodayBar[IndexFuture]*g.Window-1:]
+        g.close = g.AM[IndexFuture].exportArray('close')[-g.TodayBar[IndexFuture]*g.Window-1:]
+        # 为了防止ATR误算，如果出现大面积的空数据，则不计算ATR
+        if 0 in g.close:
+            pass
+        else:
+            g.ATR[IndexFuture] = talib.ATR(g.high,g.low,g.close, timeperiod = g.TodayBar[IndexFuture]*g.Window)[-1]
+            print(g.ATR[IndexFuture])
+            # 布林带计算
+            g.MidLine = g.close[-g.Window*g.TodayBar[IndexFuture]:].mean()
+            g.BollUp = g.MidLine + g.offset*g.ATR[IndexFuture]
+            g.BollDown = g.MidLine - g.offset*g.ATR[IndexFuture]
+            
+        
+            # 交易信号计算
+            if g.close[-1] > g.BollUp:
+                g.Cross = 1
+            elif g.close[-1] < g.BollDown:
+                g.Cross = -1
+            else:
+                g.Cross = 0
+            
+            #判断交易信号：布林带突破+可二次入场条件成立
+            if  g.Cross == 1 and g.Reentry_long == False:
+                g.Signal = 1
+            elif g.Cross == -1 and g.Reentry_short == False:
+                g.Signal = -1
+            else:
+                g.Signal = 0
+            # 执行交易
+            Trade(context,RealFuture,IndexFuture)
+            # 运行防止充入模块
+            Dont_Re_entry(context,IndexFuture,ins)
+            # 计数器+1
+            g.Times[IndexFuture] += 1
+
+
+## 收盘后运行函数
+def after_market_close(context):
+    log.info(str('函数运行时间(after_market_close):'+str(context.current_dt.time())))
+    # 得到当天所有成交记录
+    trades = get_trades()
+    for _trade in trades.values():
+        log.info('成交记录：'+str(_trade))
+    log.info('一天结束')
+    log.info('##############################################################')
+
+
+## 交易模块 
+def Trade(context,RealFuture,IndexFuture):
+    
+    # 快线高于慢线，且追踪止损失效，则可开多仓
+    if g.Signal == 1 and context.portfolio.long_positions[RealFuture].total_amount == 0:
+        if context.portfolio.short_positions[RealFuture].total_amount != 0:
+            log.info('空头有持仓：%s'%(RealFuture))
+        order_target(RealFuture,0,side='short')
+        order_target(RealFuture,g.TradeLots[IndexFuture],side='long')
+        g.HighPrice[IndexFuture] = g.close[-1]
+        g.LowPrice[IndexFuture] = False
+        log.info('正常买多合约：%s'%(RealFuture))
+    
+    elif g.Signal == -1 and context.portfolio.short_positions[RealFuture].total_amount == 0:
+        if context.portfolio.long_positions[RealFuture].total_amount != 0:
+            log.info('多头有持仓：%s'%(RealFuture))
+        order_target(RealFuture,0,side ='long')
+        order_target(RealFuture,g.TradeLots[IndexFuture],side='short')
+        g.LowPrice[IndexFuture] = g.close[-1]
+        g.HighPrice[IndexFuture] = False
+        log.info('正常卖空合约：%s'%(RealFuture))
+    else:
+        TrailingStop(context,RealFuture,IndexFuture)
+        
+        
+# 防止止损后立刻重入模块
+def Dont_Re_entry(context,IndexFuture,ins):
+    # 防重入模块：上一次止损后10天内不交易，但如果出现价格突破事件，则10天内的限制失效
+    g.Highest_high_10 = g.AM[IndexFuture].Highest_10(IndexFuture)
+    g.Lowest_low_10 = g.AM[IndexFuture].Lowest_10(IndexFuture)
+    
+    if  g.Reentry_long == True:
+        if g.Times[IndexFuture] > 10*g.TodayBar[IndexFuture] or g.close[-1] > g.Highest_high_10 :
+            g.Reentry_long = False
+    if  g.Reentry_short == True:
+        if g.Times[IndexFuture] > 10*g.TodayBar[IndexFuture] or g.close[-1] < g.Lowest_low_10 :
+            g.Reentry_short = False
+        
+        
+# 吊灯止损模块
+def TrailingStop(context,RealFuture,IndexFuture):
+    
+    # 仓位状态
+    long_positions = context.portfolio.long_positions
+    short_positions = context.portfolio.short_positions
+    # 多头进场后最高价 空头jinchanghou
+    g.HighPrice[IndexFuture] = max(g.HighPrice[IndexFuture],g.close[-1])
+    g.LowPrice[IndexFuture] = min(g.LowPrice[IndexFuture],g.close[-1])
+    
+    if RealFuture in long_positions.keys():
+        if long_positions[RealFuture].total_amount > 0:
+            if g.HighPrice[IndexFuture]:
+                if g.close[-1]  < g.HighPrice[IndexFuture]  - g.NATRstop*g.ATR[IndexFuture]:
+                    log.info('多头止损:\t' +  RealFuture)
+                    order_target(RealFuture,0,side = 'long')
+                    g.Reentry_long = True
+
+    if RealFuture in short_positions.keys():
+        if short_positions[RealFuture].total_amount > 0:
+            if g.LowPrice[IndexFuture]:
+                if g.close[-1]  > g.LowPrice[IndexFuture] + g.NATRstop*g.ATR[IndexFuture]:
+                    log.info('空头止损:\t' + RealFuture)
+                    order_target(RealFuture,0,side = 'short')
+                    g.Reentry_short = True
+        
+
+# 移仓模块：当主力合约更换时，平当前持仓，更换为最新主力合约        
+def replace_old_futures(context,ins,RealFuture):
+    
+    LastFuture = g.MappingReal[ins]
+    
+    if LastFuture in context.portfolio.long_positions.keys():
+        lots_long = context.portfolio.long_positions[LastFuture].total_amount
+        order_target(LastFuture,0,side='long')
+        order_target(RealFuture,lots_long,side='long')
+        print('主力合约更换，平多仓换新仓')
+    
+    if LastFuture in context.portfolio.short_positions.keys():
+        lots_short = context.portfolio.short_positions[LastFuture].total_amount
+        order_target(LastFuture,0,side='short')
+        order_target(RealFuture,lots_short,side='short')
+        print('主力合约更换，平空仓换新仓')
+
+        
+
+        
+# 获取当天时间正在交易的期货主力合约函数
+def get_future_code(symbol):
+    future_code_list = {'A':'A8888.XDCE', 'AG':'AG8888.XSGE', 'AL':'AL8888.XSGE', 'AU':'AU8888.XSGE',
+                        'B':'B8888.XDCE', 'BB':'BB8888.XDCE', 'BU':'BU8888.XSGE', 'C':'C8888.XDCE', 
+                        'CF':'CF8888.XZCE', 'CS':'CS8888.XDCE', 'CU':'CU8888.XSGE', 'ER':'ER8888.XZCE', 
+                        'FB':'FB8888.XDCE', 'FG':'FG8888.XZCE', 'FU':'FU8888.XSGE', 'GN':'GN8888.XZCE', 
+                        'HC':'HC8888.XSGE', 'I':'I8888.XDCE', 'IC':'IC8888.CCFX', 'IF':'IF8888.CCFX', 
+                        'IH':'IH8888.CCFX', 'J':'J8888.XDCE', 'JD':'JD8888.XDCE', 'JM':'JM8888.XDCE', 
+                        'JR':'JR8888.XZCE', 'L':'L8888.XDCE', 'LR':'LR8888.XZCE', 'M':'M8888.XDCE', 
+                        'MA':'MA8888.XZCE', 'ME':'ME8888.XZCE', 'NI':'NI8888.XSGE', 'OI':'OI8888.XZCE', 
+                        'P':'P8888.XDCE', 'PB':'PB8888.XSGE', 'PM':'PM8888.XZCE', 'PP':'PP8888.XDCE', 
+                        'RB':'RB8888.XSGE', 'RI':'RI8888.XZCE', 'RM':'RM8888.XZCE', 'RO':'RO8888.XZCE', 
+                        'RS':'RS8888.XZCE', 'RU':'RU8888.XSGE', 'SF':'SF8888.XZCE', 'SM':'SM8888.XZCE', 
+                        'SN':'SN8888.XSGE', 'SR':'SR8888.XZCE', 'T':'T8888.CCFX', 'TA':'TA8888.XZCE', 
+                        'TC':'TC8888.XZCE', 'TF':'TF8888.CCFX', 'V':'V8888.XDCE', 'WH':'WH8888.XZCE', 
+                        'WR':'WR8888.XSGE', 'WS':'WS8888.XZCE', 'WT':'WT8888.XZCE', 'Y':'Y8888.XDCE', 
+                        'ZC':'ZC8888.XZCE', 'ZN':'ZN8888.XSGE'}
+    try:
+        return future_code_list[symbol]
+    except:
+        return 'WARNING: 无此合约'
+
+
+# 获取交易手数函数（ATR倒数头寸）
+def get_lots(cash,symbol):
+    future_coef_list = {'A':10, 'AG':15, 'AL':5, 'AU':1000,
+                        'B':10, 'BB':500, 'BU':10, 'C':10,
+                        'CF':5, 'CS':10, 'CU':5, 'ER':10,
+                        'FB':500, 'FG':20, 'FU':50, 'GN':10,
+                        'HC':10, 'I':100, 'IC':200, 'IF':300,
+                        'IH':300, 'J':100, 'JD':5, 'JM':60,
+                        'JR':20, 'L':5, 'LR':10, 'M':10,
+                        'MA':10, 'ME':10, 'NI':1, 'OI':10,
+                        'P':10, 'PB':5, 'PM':50, 'PP':5,
+                        'RB':10, 'RI':20, 'RM':10, 'RO':10,
+                        'RS':10, 'RU':10, 'SF':5, 'SM':5,
+                        'SN':1, 'SR':10, 'T':10000, 'TA':5,
+                        'TC':100, 'TF':10000, 'V':5, 'WH':20,
+                        'WR':10, 'WS':50, 'WT':10, 'Y':10,
+                        'ZC':100, 'ZN':5,'AP':10}
+    RealFuture = get_dominant_future(symbol)
+    IndexFuture = get_future_code(symbol)
+    # 获取价格list
+    Price_dict = attribute_history(IndexFuture,10,'1d',['open'])
+    # 如果没有数据，返回
+    if len(Price_dict) == 0:
+        return
+    else:
+        open_future = Price_dict.iloc[-1]
+    # 返回手数
+    if IndexFuture in g.ATR.keys():
+        # 每次使用5%资金开仓交易
+        # 合约价值的表达式是：g.ATR[IndexFuture]*future_coef_list[symbol]
+        return cash*0.05/(g.ATR[IndexFuture]*future_coef_list[symbol])
+    else:# 函数运行之初会出现没将future写入ATR字典当中的情况
+        return 0
+
+
+'''
+# 获取交易手数函数(无ATR版本）
+def get_lots(cash,symbol):
+    # 获取合约规模(Contract Size)，也称交易单位
+    future_Contract_Size = {'A':10, 'AG':15, 'AL':5, 'AU':1000,
+                        'B':10, 'BB':500, 'BU':10, 'C':10,
+                        'CF':5, 'CS':10, 'CU':5, 'ER':10,
+                        'FB':500, 'FG':20, 'FU':50, 'GN':10,
+                        'HC':10, 'I':100, 'IC':200, 'IF':300,
+                        'IH':300, 'J':100, 'JD':5, 'JM':60,
+                        'JR':20, 'L':5, 'LR':10, 'M':10,
+                        'MA':10, 'ME':10, 'NI':1, 'OI':10,
+                        'P':10, 'PB':5, 'PM':50, 'PP':5,
+                        'RB':10, 'RI':20, 'RM':10, 'RO':10,
+                        'RS':10, 'RU':10, 'SF':5, 'SM':5,
+                        'SN':1, 'SR':10, 'T':10000, 'TA':5,
+                        'TC':100, 'TF':10000, 'V':5, 'WH':20,
+                        'WR':10, 'WS':50, 'WT':10, 'Y':10,
+                        'ZC':100, 'ZN':5,'AP':10}
+    future = get_dominant_future(symbol)
+    # 获取价格list
+    Price_dict = attribute_history(future,10,'1d',['open'])
+    # 如果没有数据，返回
+    if len(Price_dict) == 0:
+        return
+    else:
+        # 获得最新开盘价，计算能够下单多少手
+        open_price = Price_dict.iloc[-1]
+    # 返回手数（价格*合约规模=名义价值）
+    # 保证金使用，控制在33%
+    # 合约保证金的表达式是：open_price*future_Contract_Size[symbol]*g.MarginRate
+    return cash*0.33/(open_price*future_Contract_Size[symbol]*g.MarginRate)
+'''

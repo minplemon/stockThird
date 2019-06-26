@@ -1,0 +1,58 @@
+该策略由聚宽用户分享，仅供学习交流使用。
+原文网址：https://www.joinquant.com/post/14594
+
+原文一般包含策略说明，如有疑问建议到原文和作者交流讨论。
+
+
+原文策略源码如下：
+
+def initialize(context):
+    run_daily(period,time='every_bar')
+    g.stocksnum=6
+def period(context):
+      scu=get_index_stocks('000001.XSHG')+get_index_stocks('399106.XSHE')
+      q=query(valuation.code).filter(valuation.code.in_(scu)).order_by(valuation.market_cap.asc()).limit(g.stocksnum)
+      df=get_fundamentals(q)
+      stocklist=list(df['code'])
+      m=get_current_data()
+      buylist=stocklist
+      for stock in context.portfolio.positions:
+          if stock not in buylist: #如果stock不在buylist
+              order_target(stock, 0)
+      for stk in buylist:
+          order_value(stk,15000)
+      for stk in context.portfolio.positions:
+          cost=context.portfolio.positions[stk].price
+          close_data = attribute_history(stk,3, '1d', ['close'])
+          close_data2 = attribute_history(stk,5, '1d', ['close'])
+          close_data3 = attribute_history(stk,7, '1d', ['close'])
+          MA10 = close_data['close'].mean()
+          MA15 = close_data2['close'].mean()
+          MA20 = close_data3['close'].mean()
+          price = close_data['close'][-1]
+          ret=price/cost-1
+          if ret>0.05:
+              order_value(stk,-90000)
+          elif ret>0.1:
+              order_value(stk,-70000)
+          elif ret>0.15:
+              order_value(stk,-50000)  
+          if MA10>price:
+              order_value(stk,50000)
+          elif MA15>price:
+              order_value(stk,70000)
+          elif MA20>price:
+              order_value(stk,90000)
+          
+          
+              
+          
+
+
+          
+          
+              
+          
+     
+              
+    
