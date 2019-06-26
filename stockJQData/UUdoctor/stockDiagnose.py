@@ -19,6 +19,7 @@ from stockJQData.UUStockData import listedCompanyShareholderInfo as lcsi  # 获�
 from stockJQData.UUStockData import stockOther as so
 from stockJQData.UUStockData import financeDateData as fdd
 from stockJQData.UUStockData import financeReportData as frd
+from stockJQData.UUStockData import maketTong as mt
 
 
 today = datetime.datetime.today().date()  # 2019-06-21
@@ -50,3 +51,15 @@ frd.uu_query_STK_INCOME_STATEMENT('000001.XSHE')  # 利润表
 frd.uu_query_STK_BALANCE_SHEET('000001.XSHE')  # 合并资产负债表
 frd.uu_query_STK_CASHFLOW_STATEMENT('000001.XSHE')  # 合并现金流量表
 print(str)
+
+sic.uu_get_industries(name='zjw')  # 获取行业列表
+sic.uu_get_industry_stocks()  # 获取对于行业下所有股票
+sic.uu_get_concepts()()  # 获取概念列表
+sic.uu_uu_get_concept_stocks()  # 获取概念成份股(概念股下所有股票)
+
+indexStocks =  sbi.uu_get_index_stocks()  # 获取指数成分股
+billboardList = smi.uu_get_billboard_list(indexStocks)  # 获取龙虎榜
+print(billboardList)
+
+
+mt.uu_query_STK_AH_PRICE_COMP()  #  AH股价格对比
