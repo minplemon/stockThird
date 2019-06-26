@@ -43,8 +43,8 @@ def uu_query_STK_AH_PRICE_COMP():
     :rtype :dataframe
     :return:
     """
-    q = query(finance.STK_AH_PRICE_COMP).filter(finance.STK_AH_PRICE_COMP.a_code == '000002.XSHE').order_by(
-        finance.STK_AH_PRICE_COMP.day).limit(10)
+    q = query(finance.STK_AH_PRICE_COMP).order_by(
+        finance.STK_AH_PRICE_COMP.day).limit(90)
     df = finance.run_query(q)
     return df
 
@@ -70,8 +70,8 @@ def uu_query_STK_EL_CONST_CHANGE():
     :rtype :dataframe
     :return:
     """
-    q = query(finance.STK_EL_CONST_CHANGE).filter(finance.STK_EL_CONST_CHANGE.link_id == 310001).order_by(
-        finance.STK_EL_CONST_CHANGE.change_date).limit(10)
+    q = query(finance.STK_EL_CONST_CHANGE).filter(finance.STK_EL_CONST_CHANGE.link_id == 310003).order_by(
+        finance.STK_EL_CONST_CHANGE.change_date).limit(100)
     df = finance.run_query(q)
     return df
 
@@ -226,6 +226,7 @@ def uu_query_STK_EXCHANGE_LINK_RATE():
 
 def uu_query_STK_HK_HOLD_INFO():
     """
+    沪深港通持股数据
     记录了北向资金（沪股通、深股通）和南向资金港股通的持股数量和持股比例
     :param :query(finance.STK_HK_HOLD_INFO)：表示从finance.STK_HK_HOLD_INFO这张表中查询沪深港通的持股数据，还可以指定所要查询的字段名，格式如下：query(库名.表名.字段名1，库名.表名.字段名2），多个字段用英文逗号分隔进行提取；如query(finance.STK_HK_HOLD_INFO.code)。query函数的更多用法详见：query简易教程。
             finance.STK_HK_HOLD_INFO：收录了沪深港通每日的持股数量和持股比例数据，表结构和字段信息如下：
@@ -242,7 +243,7 @@ def uu_query_STK_HK_HOLD_INFO():
     :rtype :dataframe
     :return:
     """
-    df = finance.run_query(query(finance.STK_HK_HOLD_INFO).filter(finance.STK_HK_HOLD_INFO.link_id == 310001).order_by(
+    df = finance.run_query(query(finance.STK_HK_HOLD_INFO).filter(finance.STK_HK_HOLD_INFO.link_id == 310003).order_by(
         finance.STK_HK_HOLD_INFO.day.desc()))
     return df
 
@@ -275,6 +276,5 @@ def uu_query_GLOBAL_IDX_DAILY():
     df = finance.run_query(q)
     return df
 
-q=query(finance.GLOBAL_IDX_DAILY).filter(finance.GLOBAL_IDX_DAILY.code=='INX').order_by(finance.GLOBAL_IDX_DAILY.day.desc()).limit(10)
-df=finance.run_query(q)
+df=uu_query_STK_EL_CONST_CHANGE()
 print(df)

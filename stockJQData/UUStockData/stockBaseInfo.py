@@ -194,5 +194,5 @@ def uu_get_mtss():
     """
     return get_mtss('000001.XSHE', '2016-01-01', '2016-04-01')
 
-# ss = get_index_weights(index_id="000001.XSHG", date="2018-05-09")
-# print(ss)
+# df = uu_get_all_securities()
+# print(df)

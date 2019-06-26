@@ -117,8 +117,6 @@ def uu_get_price(stock,start_date,end_date,frequency='1d'):
     return get_price(stock, start_date=start_date, end_date=end_date, frequency=frequency,
                fields=['open', 'close','low','high','volume','money','factor','high_limit','low_limit','avg','pre_close','paused'])
 
-# df = uu_get_price()
-# print(df)
 
 def uu_get_bars():
     """
@@ -191,7 +189,7 @@ def uu_get_money_flow():
     return get_money_flow('000001.XSHE', '2016-02-01', '2016-02-04')
 
 
-def uu_get_billboard_list():
+def uu_get_billboard_list(stock_list=None, end_date = '2019-06-20' ):
     """
     获取指定日期区间内的龙虎榜数据
     :param :stock_list: 一个股票代码的 list。 当值为 None 时， 返回指定日期的所有股票。
@@ -229,7 +227,7 @@ def uu_get_billboard_list():
             106014	单只标的证券的当日融券卖出数量达到当日该证券总交易量的50％以上的证券
             106099	其它异常波动的证券
     """
-    return get_billboard_list(stock_list=None, end_date = '2018-08-01', count =1)
+    return get_billboard_list(stock_list=stock_list, end_date = end_date, count =1)
 
 def uu_get_future_contracts():
     """
@@ -252,5 +250,5 @@ def uu_get_dominant_future():
     return get_dominant_future('AU','2018-05-06')
 
 
-# df = get_money_flow('000001.XSHE', '2016-02-01', '2016-02-04')
-# print(df)
+df = uu_get_ticks()
+print(df)

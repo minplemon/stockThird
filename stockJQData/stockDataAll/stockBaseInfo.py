@@ -93,7 +93,7 @@ def stock_get_index_stocks():
     :rtype : list
     :return:
     """
-    return get_index_stocks('000300.XSHG')
+    return get_index_stocks('000001.XSHG')
 
 
 def stock_get_margincash_stocks():
@@ -194,5 +194,5 @@ def stock_get_mtss():
     """
     return get_mtss('000001.XSHE', '2016-01-01', '2016-04-01')
 
-ss = get_index_weights(index_id="000001.XSHG", date="2018-05-09")
+ss = stock_get_security_info()
 print(ss)

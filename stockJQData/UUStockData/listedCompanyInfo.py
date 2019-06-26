@@ -115,6 +115,7 @@ def uu_query_STK_COMPANY_INFO(stock):
     df = finance.run_query(q)
     return df
 
+
 def uu_query_STK_STATUS_CHANGE():
     """
     上市公司状态变动
@@ -299,5 +300,5 @@ def uu_query_STK_MANAGEMENT_INFO(stock):
     return df
 
 
-# df=uu_query_STK_LIST()
-# print(df)
+df=uu_query_STK_COMPANY_INFO('000001.XSHE')
+print(df)

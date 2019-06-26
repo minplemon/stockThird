@@ -43,8 +43,8 @@ def stock_query_STK_AH_PRICE_COMP():
     :rtype :dataframe
     :return:
     """
-    q = query(finance.STK_AH_PRICE_COMP).filter(finance.STK_AH_PRICE_COMP.a_code == '000002.XSHE').order_by(
-        finance.STK_AH_PRICE_COMP.day).limit(10)
+    q = query(finance.STK_AH_PRICE_COMP).order_by(
+        finance.STK_AH_PRICE_COMP.day).limit(100)
     df = finance.run_query(q)
     return df
 
@@ -275,6 +275,11 @@ def stock_query_GLOBAL_IDX_DAILY():
     df = finance.run_query(q)
     return df
 
-q=query(finance.GLOBAL_IDX_DAILY).filter(finance.GLOBAL_IDX_DAILY.code=='INX').order_by(finance.GLOBAL_IDX_DAILY.day.desc()).limit(10)
-df=finance.run_query(q)
+
+
+
+
+
+
+df=stock_query_STK_AH_PRICE_COMP()
 print(df)

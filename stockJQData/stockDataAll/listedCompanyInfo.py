@@ -297,6 +297,6 @@ def stock_query_STK_MANAGEMENT_INFO():
     return df
 
 
-q=query(finance.STK_MANAGEMENT_INFO).filter(finance.STK_MANAGEMENT_INFO.code=='000001.XSHE').order_by(finance.STK_MANAGEMENT_INFO.pub_date).limit(10)
-df=finance.run_query(q)
+# q=query(finance.STK_MANAGEMENT_INFO).filter(finance.STK_MANAGEMENT_INFO.code=='000001.XSHE').order_by(finance.STK_MANAGEMENT_INFO.pub_date).limit(10)
+df=stock_query_STK_COMPANY_INFO()
 print(df)

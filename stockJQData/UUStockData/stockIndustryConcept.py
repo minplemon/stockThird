@@ -79,6 +79,6 @@ def uu_get_industry(stock,date):
     """
     return get_industry(stock,date=date)
 
-#
-# ss = uu_get_industry()
-# print(ss)
+
+# df = uu_get_industry_stocks()
+# print(df)
