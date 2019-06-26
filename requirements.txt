@@ -105,7 +105,6 @@ outcome==1.0.0
 pandas==0.24.2
 pandasql==0.7.3
 pandocfilters==1.4.2
-parso==0.4.0
 passlib==1.7.1
 permission==0.4.1
 pexpect==4.7.0

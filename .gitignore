@@ -136,6 +136,8 @@ venv.bak/
 # *.ipr
 
 # 文件忽略
-UUStock/
-UUStockData/
-UUdoctor/
+#UUStock/
+#UUStockData/
+#UUdoctor/
+.idea/inspectionProfiles/Project_Default.xml
+.idea/inspectionProfiles/Project_Default.xml
