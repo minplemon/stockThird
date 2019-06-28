@@ -14,10 +14,10 @@ import lxml.html
 from lxml import etree
 import pandas as pd
 import numpy as np
-from util import dateu as du
+from stockTuShare.util import dateu as du
 import re
 from pandas.compat import StringIO
-from stock import cons as ct
+from stockTuShare import cons as ct
 try:
     from urllib.request import urlopen, Request
 except ImportError:

@@ -9,17 +9,14 @@
 
 
 from __future__ import division
-from stock import cons as ct
-from stock import ref_vars as rv
+from stockTuShare import cons as ct
+from stockTuShare import ref_vars as rv
 import pandas as pd
-import numpy as np
 import time
 import lxml.html
 from lxml import etree
 import re
-import json
-from pandas.compat import StringIO
-from util import dateu as du
+
 try:
     from urllib.request import urlopen, Request
 except ImportError:
