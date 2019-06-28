@@ -26,10 +26,10 @@ print('-------')
 #
 # # 输出 security_list2 的 KDJ 值
 # K2,D2,J2 = KDJ(security_list2, check_date='2017-01-04', N =9, M1=3, M2=3)
-# for stock in security_list2:
-#     print (K2[stock])
-#     print (D2[stock])
-#     print (J2[stock])
+# for stockTuShare in security_list2:
+#     print (K2[stockTuShare])
+#     print (D2[stockTuShare])
+#     print (J2[stockTuShare])
 
 
 # security_list1 = '000001.XSHE'
@@ -41,8 +41,8 @@ print('-------')
 #
 # # 输出 security_list2 的 ACCER 值
 # ACCER2 = ACCER(security_list2, check_date='2017-01-04', N = 8)
-# for stock in security_list2:
-#     print (ACCER2[stock])
+# for stockTuShare in security_list2:
+#     print (ACCER2[stockTuShare])
 
 ## 各种榜
 sdfd = get_billboard_list(stock_list=None, end_date = '2019-05-13', count =1)

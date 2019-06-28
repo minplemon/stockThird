@@ -8,7 +8,7 @@
 # @Software: PyCharm
 
 import unittest
-from stock import reference as fd
+from stockTuShare import reference as fd
 
 
 class Test(unittest.TestCase):

@@ -276,5 +276,5 @@ def uu_query_GLOBAL_IDX_DAILY():
     df = finance.run_query(q)
     return df
 
-df=uu_query_STK_EL_CONST_CHANGE()
-print(df)
+# df=uu_query_STK_EL_CONST_CHANGE()
+# print(df)

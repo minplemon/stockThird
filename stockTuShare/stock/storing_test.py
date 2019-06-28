@@ -9,7 +9,7 @@
 import os
 from sqlalchemy import create_engine
 from pandas.io.pytables import HDFStore
-import stock.trading as fd
+import stockTuShare.trading as fd
 path = os.getcwd()
 
 

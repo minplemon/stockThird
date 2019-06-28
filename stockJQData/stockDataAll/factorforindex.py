@@ -45,7 +45,7 @@ def stock_kdj():
             M2：统计的天数 M2
             unit：统计周期，默认为 '1d', 支持如下周期: '1m', '5m', '15m', '30m', '60m', '120m', '1d', '1w', '1M'. '1w' 表示一周, ‘1M' 表示一月
             include_now：是否包含当前周期，默认为 True
-    :param stock:
+    :param stockTuShare:
     :rtype :dict
     :return:K，D和J 的值
     :用法 :  1.指标>80 时，回档机率大；指标<20时，反弹机率大；

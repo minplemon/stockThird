@@ -30,17 +30,17 @@ auth('18620668927', 'minpeng123')   # 账号密码认证
 def uu_get_all_securities():
     """
     获取平台支持的所有股票数据:获取平台支持的所有股票、基金、指数、期货信息
-    :param :types: list: 用来过滤securities的类型, list元素可选: 'stock', 'fund', 'index', 'futures', 'etf', 'lof', 'fja', 'fjb'。types为空时返回所有股票, 不包括基金,指数和期货
+    :param :types: list: 用来过滤securities的类型, list元素可选: 'stockTuShare', 'fund', 'index', 'futures', 'etf', 'lof', 'fja', 'fjb'。types为空时返回所有股票, 不包括基金,指数和期货
             date: 日期, 一个字符串或者 [datetime.datetime]/[datetime.date] 对象, 用于获取某日期还在上市的股票信息. 默认值为 None, 表示获取所有日期的股票信息
     :rtype :pandas.DataFrame
     :return:display_name # 中文名称
             name # 缩写简称
             start_date # 上市日期
             end_date # 退市日期，如果没有退市则为2200-01-01
-            type # 类型，stock(股票)
+            type # 类型，stockTuShare(股票)
     : otherfun
                 #将所有股票列表转换成数组
-                stocks = list(get_all_securities(['stock']).index)
+                stocks = list(get_all_securities(['stockTuShare']).index)
 
                 #获得所有指数列表
                 get_all_securities(['index'])
@@ -65,7 +65,7 @@ def uu_get_all_securities():
                 #获得2015年10月10日还在上市的 etf 和 lof 基金列表
                 get_all_securities(['etf', 'lof'], '2015-10-10')
     """
-    return get_all_securities(types=['stock'], date=None)
+    return get_all_securities(types=['stockTuShare'], date=None)
 
 
 
@@ -78,7 +78,7 @@ def uu_get_security_info(stock):
             name # 缩写简称
             start_date # 上市日期, [datetime.date] 类型
             end_date # 退市日期， [datetime.date] 类型, 如果没有退市则为2200-01-01
-            type # 类型，stock(股票)，index(指数)，etf(ETF基金)，fja（分级A），fjb（分级B）
+            type # 类型，stockTuShare(股票)，index(指数)，etf(ETF基金)，fja（分级A），fjb（分级B）
             parent # 分级基金的母基金代码
     """
 

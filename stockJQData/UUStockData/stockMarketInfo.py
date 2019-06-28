@@ -83,7 +83,7 @@ def uu_get_all_trade_days():
     """
     return get_all_trade_days()
 
-def uu_get_price(stock,start_date,end_date,frequency='1d'):
+def uu_get_price(stock,start_date,end_date,frequency='1m'):
     """
     获取一支或者多只股票的实时行情和历史行情, 按天或者按分钟，这里在使用时注意 end_date 的设置，不要引入未来的数据
     :param :security: 一支股票代码或者一个股票代码的list
@@ -250,5 +250,5 @@ def uu_get_dominant_future():
     return get_dominant_future('AU','2018-05-06')
 
 
-df = uu_get_ticks()
-print(df)
+# df = uu_get_ticks()
+# print(df)

@@ -21,7 +21,7 @@ def uu_get_security_info():
             name # 缩写简称
             start_date # 上市日期, [datetime.date] 类型
             end_date # 退市日期， [datetime.date] 类型, 如果没有退市则为2200-01-01
-            type # 类型，stock(股票)，index(指数)，etf(ETF基金)，fja（分级A），fjb（分级B）
+            type # 类型，stockTuShare(股票)，index(指数)，etf(ETF基金)，fja（分级A），fjb（分级B）
             parent # 分级基金的母基金代码
     """
 
@@ -37,9 +37,9 @@ def uu_get_all_securities():
             name # 缩写简称
             start_date # 上市日期
             end_date # 退市日期，如果没有退市则为2200-01-01
-            type # 类型，stock(股票)
+            type # 类型，stockTuShare(股票)
     """
-    return get_all_securities(types=['stock'], date=None)
+    return get_all_securities(types=['stockTuShare'], date=None)
 
 def uu_get_industry():
     """

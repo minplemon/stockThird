@@ -25,10 +25,12 @@ def uu_get_query_count():
     """
     return get_query_count()
 
-def uu_normalize_code():
+def uu_normalize_code(code):
     """
     股票代码格式转化
     将其他形式的股票代码转换为jqdatasdk函数可用的股票代码形式。 仅适用于A股市场股票代码以及基金代码,支持传入单只股票或一个股票list 示例
+    :param : str list
     :return:['000001.XSHE', '000001.XSHE', '000001.XSHE', '000001.XSHE', '000001.XSHE']
     """
-    return normalize_code(['000001', 'SZ000001', '000001SZ', '000001.sz', '000001.XSHE'])
+    return normalize_code(code)
+

@@ -9,7 +9,7 @@
 
 import urllib.request
 import unittest
-import stock.trading as fd
+import stockTuShare.trading as fd
 
 
 # 测试请求数据

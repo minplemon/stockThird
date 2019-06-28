@@ -13,7 +13,8 @@ import numpy as np
 
 from stockJQData.localjq.base_model import  BaseModel
 
-from Calf.exception import MongoIOError, FileError, ExceptionInfo, WarningMessage, SuccessMessage  # 这都是一些关于异常处理的自定义方法，可以先不管，代码中报错的可以先注释掉
+from BaseException import MongoIOError, FileError, ExceptionInfo, WarningMessage, SuccessMessage  # 这都是一些关于异常处理的自定义方法，可以先不管，代码中报错的可以先注释掉
+
 
 
 class ModelData(object):
