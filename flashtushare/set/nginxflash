@@ -1,0 +1,20 @@
+server {
+         listen 8090;
+         server_name 127.0.0.1;#域名或者ip地址
+         charset utf-8;
+         # Django 的static和 media等静态资源交给Nginx处理
+         location /static {
+             # 路径必须和STATIC_ROOT一样
+             alias /var/www/myApp/static/;
+         }
+          location /media  {
+              #项目下的media路径
+             alias /var/www/myApp/media/;
+         }
+         location /{
+             # 必须和uwsgi.ini中socket一样,配置了upstream可以将uwsgi_pass配置为：http:// +             upstream名称，即“http://ray”.
+             uwsgi_pass 127.0.0.1:8091;
+             #uwsgi_pass http://ray;
+             include uwsgi_params;
+         }
+     }
