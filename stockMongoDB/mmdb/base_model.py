@@ -16,7 +16,7 @@ from .db import MongoDB, ASCENDING, DESCENDING, mongodb, connection
 
 class BaseModel(object):
     """
-    _id 是 mongo 自带的，必须有这个字段
+    _id 是 mongodbt 自带的，必须有这个字段
     其余 __fields__  的固定属性，未来会逐步添加
         classtype 是类名的小写
     """

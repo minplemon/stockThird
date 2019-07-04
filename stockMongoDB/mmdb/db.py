@@ -9,10 +9,11 @@
 
 from pymongo import *  # MongoDB的连接库
 import json
+import os
 
 # 构建一个默认的MongoDB对象置于项目运行的内存当中，避免频繁
 # 的创建MongoDB对象
-config_file =  './db_config.json' # 上面创建的那个json文件的路径
+config_file =  os.getcwd()+'/config/db_config.json' # 上面创建的那个json文件的路径
 try:
     with open(config_file) as f:
         l = f.read()

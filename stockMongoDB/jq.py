@@ -7,9 +7,8 @@
 # @File    : jq.py
 # @Software: PyCharm
 
-import pandas as pd
 import jqdatasdk as jq
-from stockMongoDB.modeldata import ModelData as md
+from stockMongoDB.mmdb.modeldata import ModelData as md
 import datetime as dt
 
 

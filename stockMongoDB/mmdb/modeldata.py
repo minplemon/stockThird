@@ -9,9 +9,8 @@
 
 import datetime
 import pandas as pd
-import numpy as np
 
-from stockMongoDB.base_model import  BaseModel
+from stockMongoDB.mmdb.base_model import  BaseModel
 # from Calf.exception import MongoIOError, FileError, ExceptionInfo, \
 #   WarningMessage, SuccessMessage  # 这都是一些关于异常处理的自定义方法，可以先不管，代码中报错的可以先注释掉
 
